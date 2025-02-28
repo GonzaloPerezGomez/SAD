@@ -17,8 +17,14 @@ def load_data(file):
     :return: Datos del fichero
     """
     data = pd.read_csv(file)
+    data = preprocesado(data)
     return data
 
+def preprocesado(data):
+
+    #TODO: Preprocesar los datos en base al json en conf
+    return data
+    
 def calculate_fscore(y_test, y_pred):
     """
     Función para calcular el F-score
