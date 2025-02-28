@@ -31,6 +31,10 @@ def load_data(file):
     data = pd.read_csv(file)
     return data
 
+def preprocesado(datos: pd.DataFrame):
+
+    return datos
+
 def calculate_fscore(y_test, y_pred):
     """
     Función para calcular el F-score
@@ -101,6 +105,8 @@ if __name__ == "__main__":
     except FileNotFoundError:
         print("Fichero no encontrado, asegurate de escribir bien la ruta")
         exit()
+
+    datos = preprocesado(datos)
 
     top_model = train(k, K, p, datos)
 
