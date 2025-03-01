@@ -5,22 +5,38 @@ import kNN
 from datetime import datetime
 
 def pedir_param():
-    file = input("De que archivo quieres carga el dataset: ")
-    k = int(input("Numero minimo de vecinos(k): "))
-    K = int(input("Numero maximo de vecinos(k): "))
-    p = int(input("Numero maximo de p (1,2): "))
 
-    if k <= 0 or K <= 0:
-        print("Los numeros de vecinos deben ser positivos")
-        exit()
-    elif K < k:
-        print("El numero maximo de vecinos no puede ser mayor al numero minimo de vecinos")
-        exit()
-    elif p != 1 and p != 2:
-        print("El valor de p debe ser 1 o 2")
-        exit()
+    algoritmo = int(input("Selecciona el algoritmo a usar(KNN = 0, DT = 1)"))
 
-    return k, K, p, file
+    if algoritmo == 0:
+        
+        file = input("De que archivo quieres carga el dataset: ")
+        k = int(input("Numero minimo de vecinos(k): "))
+        K = int(input("Numero maximo de vecinos(k): "))
+        p = int(input("Numero maximo de p (1,2): "))
+        
+
+        if k <= 0 or K <= 0:
+            print("Los numeros de vecinos deben ser positivos")
+            exit()
+        elif K < k:
+            print("El numero maximo de vecinos no puede ser mayor al numero minimo de vecinos")
+            exit()
+        elif p != 1 and p != 2:
+            print("El valor de p debe ser 1 o 2")
+            exit()
+
+        conf = input("Indique el fichero json para el preprocesado(dejar en blanco si no requiere preprocesado)")
+
+        return [algoritmo, file, k, K, p, conf]
+
+    elif algoritmo == 1:
+        #TODO: Definir alforitmo de arbol
+        exit()
+    
+    else:
+        print("Valor no valido")
+        exit()
 
 def load_data(file):
     """
@@ -31,9 +47,14 @@ def load_data(file):
     data = pd.read_csv(file)
     return data
 
-def preprocesado(datos: pd.DataFrame):
-
-    return datos
+def load_json(file):
+    """
+    Función para cargar los datos de un fichero csv
+    :param file: Fichero csv
+    :return: Datos del fichero
+    """
+    data = pd.read_json(file)
+    return data
 
 def calculate_fscore(y_test, y_pred):
     """
@@ -63,53 +84,83 @@ def calculate_prec_rec(y_test, y_pred):
     from sklearn.metrics import precision_score, recall_score
     return precision_score(y_test, y_pred, average="weighted"), recall_score(y_test, y_pred, average="weighted")
 
-def train(k, K, p, datos):
+def trainKNN(k, K, p, datos, file, conf):
     
-    top_fscore = 0
+    top_fscore_micro = 0
     weights = ["uniform", "distance"]
     date = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+
+    datos = kNN.preprocesadoKNN(datos, conf)
 
     for indexK in range(k, K+1):
         for indexP in range(1, p+1):
             for w in weights:
-                y_test, y_pred, model = kNN.kNN(datos, indexK, w, indexP)
+                y_test, y_pred, model = kNN.kNN(datos, indexK, w, indexP, conf)
                 fscore_micro, fscore_macro = calculate_fscore(y_test, y_pred)
                 prec, rec = calculate_prec_rec(y_test, y_pred)
-                gen_informe(date, indexK, indexP, w, fscore_micro, fscore_macro, prec, rec)
+                gen_informe(False, date, indexK, indexP, w, fscore_micro, fscore_macro, prec, rec, file)
 
-                if fscore_micro > top_fscore:
-                    top_fscore = fscore_micro
+                if fscore_micro > top_fscore_micro:
+                    top_fscore_micro = fscore_micro
                     top_model = model
+                    top_k = indexK
+                    top_p = indexP
+                    top_w = w
+                    top_fscore_macro = fscore_macro
+                    top_prec = prec
+                    top_rec = rec
+
+    gen_informe(True, date, top_k, top_p,top_w, top_fscore_micro, top_fscore_macro, top_prec, top_rec, file)
     return top_model
 
-def gen_informe(date, indexK, indexP, w, fscore_micro, fscore_macro, prec, rec):
-    with open(f'informes/informeKNN{date}.csv', 'a', newline='') as csvfile:
+def gen_informe(es_final, date, indexK, indexP, w, fscore_micro, fscore_macro, prec, rec, file: str):
+    with open(f'informes/informeKNN-{file}-{date}.csv', 'a', newline='') as csvfile:
         spamwriter = csv.writer(csvfile)
-        spamwriter.writerow(["K = " + str(indexK), "P = " + str(indexP), w, "Micro = " + str(fscore_micro), 
-                             "Macro = " + str(fscore_macro), "Precision = " + str(prec), "Recall = " + str(rec)])
+        if not es_final:
+            spamwriter.writerow(["K = " + str(indexK), "P = " + str(indexP), w, "Micro = " + str(fscore_micro), 
+                                "Macro = " + str(fscore_macro), "Precision = " + str(prec), "Recall = " + str(rec)])
+        else:
+            spamwriter.writerow(["Conbinacion optima:"])
+            spamwriter.writerow(["K = " + str(indexK), "P = " + str(indexP), w, "Micro = " + str(fscore_micro), 
+                                "Macro = " + str(fscore_macro), "Precision = " + str(prec), "Recall = " + str(rec)])
 
-def guardar_modelo(modelo):
+def guardar_modelo(modelo, file):
 
     import pickle 
     
-    nombreModel = f"models/TopModelKNN{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.sav" 
+    nombreModel = f"models/TopModelKNN-{file}-{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.sav" 
     saved_model = pickle.dump(modelo, open(nombreModel,'wb'))
     print('Modelo guardado correctamente empleando Pickle')
 
+
 if __name__ == "__main__":
 
-    k, K, p, file = pedir_param()
+    param = pedir_param()
 
     try:
-        datos = load_data(file)
+        datos = load_data(param[1])
     except FileNotFoundError:
-        print("Fichero no encontrado, asegurate de escribir bien la ruta")
+        print("Fichero de datos no encontrado, asegurate de escribir bien la ruta")
         exit()
 
-    datos = preprocesado(datos)
+    file = param[1].split("data/")[1].split(".csv")[0]
 
-    top_model = train(k, K, p, datos)
+    try:
+        prep = load_json(param[5])
+    except FileNotFoundError:
+        print("Fichero de preproceso no encontrado, asegurate de escribir bien la ruta")
+        exit()   
 
-    guardar_modelo(top_model)
+    
+
+    if param[0] == 0:
+
+        top_model = trainKNN(param[2], param[3], param[4], datos, file, prep)
+
+    elif param[0] == 1:
+        #TODO:
+        exit
+
+    guardar_modelo(top_model, file)
 
 

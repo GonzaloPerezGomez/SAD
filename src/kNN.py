@@ -4,51 +4,44 @@ Autor: Xabier Gabiña Barañano
 Script para la implementación del algoritmo kNN
 Recoge los datos de un fichero csv y los clasifica en función de los k vecinos más cercanos
 """
-
-import sys
-import sklearn as sk
 import numpy as np
 import pandas as pd
+from sklearn.preprocessing import LabelEncoder
 
-def load_data(file):
-    """
-    Función para cargar los datos de un fichero csv
-    :param file: Fichero csv
-    :return: Datos del fichero
-    """
-    data = pd.read_csv(file)
-    data = preprocesado(data)
-    return data
 
-def preprocesado(data):
+def preprocesadoKNN(datos: pd.DataFrame, conf: pd.DataFrame):
 
-    #TODO: Preprocesar los datos en base al json en conf
-    return data
+    #Pasar las features categoriales a numericas
+    encoder = LabelEncoder()
+    cf = conf["preprocessing"]["categorical_features"]
+    nf = conf["preprocessing"]["numerical_features"]
     
-def calculate_fscore(y_test, y_pred):
-    """
-    Función para calcular el F-score
-    :param y_test: Valores reales
-    :param y_pred: Valores predichos
-    :return: F-score (micro), F-score (macro)
-    """
-    from sklearn.metrics import f1_score
-    fscore_micro = f1_score(y_test, y_pred, average='micro')
-    fscore_macro = f1_score(y_test, y_pred, average='macro')
-    return fscore_micro, fscore_macro
+    for feature in cf:
+        datos[feature] = encoder.fit_transform(datos[feature])
 
-def calculate_confusion_matrix(y_test, y_pred):
-    """
-    Función para calcular la matriz de confusión
-    :param y_test: Valores reales
-    :param y_pred: Valores predichos
-    :return: Matriz de confusión
-    """
-    from sklearn.metrics import confusion_matrix
-    cm = confusion_matrix(y_test, y_pred)
-    return cm
+    f = cf + nf
 
-def kNN(data, k, weights, p):
+    #Tratamiento de missing values
+    mv = conf["preprocessing"]["missing_values"]
+    ist = conf["preprocessing"]["impute_strategy"]
+
+    if mv == "drop":
+        datos = datos.dropna()
+    elif mv == "impute":
+        if ist == "mean":
+            for feature in f:
+                datos[feature] = datos[feature].fillna(datos[feature].mean())
+        if ist == "median":
+            for feature in f:
+                datos[feature] = datos[feature].fillna(datos[feature].median())
+        if ist == "mode":
+            for feature in f:
+                datos[feature] = datos[feature].fillna(datos[feature].mode())
+
+    exit()
+    return datos
+  
+def kNN(data, k, weights, p, conf):
     """
     Función para implementar el algoritmo kNN
     
@@ -63,6 +56,7 @@ def kNN(data, k, weights, p):
     :return: Clasificación de los datos
     :rtype: tuple
     """
+
     # Seleccionamos las características y la clase
     X = data.iloc[:, :-1].values # Todas las columnas menos la última
     y = data.iloc[:, -1].values # Última columna
@@ -87,24 +81,3 @@ def kNN(data, k, weights, p):
     y_pred = classifier.predict(X_test)
     
     return y_test, y_pred, classifier
-
-if __name__ == "__main__":
-    # Comprobamos que se han introducido los parámetros correctos
-    if len(sys.argv) < 3:
-        print("Error en los parámetros de entrada")
-        print("Uso: kNN.py <fichero*> <k*> <weights> <p>")
-        sys.exit(1)
-    
-    # Cargamos los datos
-    data = load_data(sys.argv[1])
-    
-    # Implementamos el algoritmo kNN
-    y_test, y_pred = kNN(data, int(sys.argv[2]), sys.argv[3] if len(sys.argv) > 3 else 'uniform', int(sys.argv[4]) if len(sys.argv) > 4 else 2)
-    
-    # Mostramos la matriz de confusión
-    print("\nMatriz de confusión:")
-    print(calculate_confusion_matrix(y_test, y_pred))
-
-    # Mostramos el F-score
-    print("\nF-score:")
-    print(calculate_fscore(y_test, y_pred))
