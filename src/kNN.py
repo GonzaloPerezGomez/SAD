@@ -10,6 +10,7 @@ from sklearn.preprocessing import LabelEncoder
 
 
 def preprocesadoKNN(datos: pd.DataFrame, conf: pd.DataFrame):
+    #TODO: Añadir preprocesado de textos (BOW, tf-idf)
 
     #Pasar las features categoriales a numericas
     encoder = LabelEncoder()
@@ -20,6 +21,35 @@ def preprocesadoKNN(datos: pd.DataFrame, conf: pd.DataFrame):
         datos[feature] = encoder.fit_transform(datos[feature])
 
     f = cf + nf
+
+    #Outliers
+    o = conf["preprocessing"]["outliers"]
+    ost = conf["preprocessing"]["outliers_strategy"]
+
+    for feature in f:
+        if ost == "quantile":
+            Q1 = datos[feature].quantile(0.25)
+            Q3 = datos[feature].quantile(0.75)
+            IQR = Q3 - Q1
+
+            limite_inferior = Q1 - 1.5 * IQR
+            limite_superior = Q3 + 1.5 * IQR
+        
+        elif ost == "std":
+            mean = datos[feature].mean()
+            std = datos[feature].std()
+
+            limite_inferior = mean - 3 * std
+            limite_superior = mean + 3 * std
+
+        if o == "drop":
+            datos = datos[((datos[feature]>=limite_inferior) & (datos[feature]<=limite_superior)) 
+                          | (datos[feature].isna())]
+
+        elif o == "round":
+            datos[feature] = datos[feature].astype(float) #No es necesario pero numpy lo recomienda para avitar futuros problemas
+            datos.loc[datos[feature]<=limite_inferior, feature] = limite_inferior
+            datos.loc[datos[feature]>=limite_superior, feature] = limite_superior
 
     #Tratamiento de missing values
     mv = conf["preprocessing"]["missing_values"]
@@ -37,6 +67,27 @@ def preprocesadoKNN(datos: pd.DataFrame, conf: pd.DataFrame):
         if ist == "mode":
             for feature in f:
                 datos[feature] = datos[feature].fillna(datos[feature].mode())
+
+    ##Reescalado
+    e = conf["preprocessing"]["scaling"]
+
+    if e == "min-max":
+        for feature in f:
+            min = datos[feature].min()
+            max = datos[feature].max()
+            try:
+                datos[feature] = (datos[feature] - min) / (max - min)
+            except ZeroDivisionError:
+                print(f"Atributo {feature} no se ha escalado dado que el min y el max es el mismo")
+
+    elif e == "avgstd":
+        for feature in f:
+            avg = datos[feature].mean()
+            std = datos[feature].std()
+            try:
+                datos[feature] = (datos[feature] - avg) / std
+            except ZeroDivisionError:
+                print(f"Atributo {feature} no se ha escalado dado que de su desviación es 0")
 
     exit()
     return datos
@@ -65,12 +116,6 @@ def kNN(data, k, weights, p, conf):
     from sklearn.model_selection import train_test_split
     np.random.seed(42)  # Set a random seed for reproducibility
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25)
-    
-    # Escalamos los datos
-    from sklearn.preprocessing import StandardScaler
-    sc = StandardScaler()
-    X_train = sc.fit_transform(X_train)
-    X_test = sc.transform(X_test)
     
     # Entrenamos el modelo
     from sklearn.neighbors import KNeighborsClassifier
