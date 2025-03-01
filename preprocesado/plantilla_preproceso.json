@@ -2,10 +2,23 @@
     "preprocessing":{
         "categorical_features":[],
         "numerical_features": [],
-        "missing_values": "impute",
-        "impute_strategy": "mean",
-        "scaling": "standard",
-        "text_process": "tf-idf",
-        "sampling": "undersamplig"
+        "missing_values": "",
+        "impute_strategy": "",
+        "scaling": "",
+        "outliers": "",
+        "round_strategy": "",
+        "text_process": "",
+        "sampling": ""
+    },
+    "opciones":{
+        "categorical_features": [],
+        "numerical_features": [],
+        "missing_values": ["impute", "drop"],
+        "impute_strategy": ["mean", "mode", "median"],
+        "scaling": ["min-max", "avgstd"],
+        "outliers": ["round", "drop"],
+        "outliers_strategy": ["quantile", "std"],
+        "text_process": ["BOW", "one_hot", "tf-idf"],
+        "sampling": ["undersampling", "oversampling"]
     }
 }
