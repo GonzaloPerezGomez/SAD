@@ -44,7 +44,7 @@ def preprocesadoKNN(datos: pd.DataFrame, conf: pd.DataFrame):
     for feature in cf:
         datos[feature] = encoder.fit_transform(datos[feature])
 
-    f = cf + nf + tf
+    f = cf + nf + df_transformed.columns.tolist()
 
     #Outliers
     o = conf["preprocessing"]["outliers"]
@@ -116,6 +116,8 @@ def preprocesadoKNN(datos: pd.DataFrame, conf: pd.DataFrame):
                 datos[feature] = (datos[feature] - avg) / std
             else:
                 print(f"Atributo {feature} no se ha escalado porque su desviación estándar es 0.")
+
+    #Rebalanceo
 
     return datos
   
