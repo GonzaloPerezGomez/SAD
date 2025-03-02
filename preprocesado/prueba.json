@@ -1,5 +1,6 @@
 {
     "preprocessing":{
+        "text_features" : ["Text_Feature"],
         "categorical_features": ["Categorical Feature"],
         "numerical_features": ["Numerical Feature"],
         "missing_values": "impute",
@@ -7,7 +8,7 @@
         "scaling": "min-max",
         "outliers": "round",
         "outliers_strategy": "std",
-        "text_process": "tf-idf",
+        "text_process": "one_hot",
         "sampling": "undersampling"
     }
 }

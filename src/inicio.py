@@ -53,7 +53,10 @@ def load_json(file):
     :param file: Fichero csv
     :return: Datos del fichero
     """
-    data = pd.read_json(file)
+    if file != "":
+        data = pd.read_json(file)
+    else:
+        data = None
     return data
 
 def calculate_fscore(y_test, y_pred):
@@ -90,7 +93,8 @@ def trainKNN(k, K, p, datos, file, conf):
     weights = ["uniform", "distance"]
     date = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
-    datos = kNN.preprocesadoKNN(datos, conf)
+    if not(type(conf) is type(None)):
+        datos = kNN.preprocesadoKNN(datos, conf)
 
     for indexK in range(k, K+1):
         for indexP in range(1, p+1):
@@ -116,12 +120,10 @@ def trainKNN(k, K, p, datos, file, conf):
 def gen_informe(es_final, date, indexK, indexP, w, fscore_micro, fscore_macro, prec, rec, file: str):
     with open(f'informes/informeKNN-{file}-{date}.csv', 'a', newline='') as csvfile:
         spamwriter = csv.writer(csvfile)
-        if not es_final:
-            spamwriter.writerow(["K = " + str(indexK), "P = " + str(indexP), w, "Micro = " + str(fscore_micro), 
-                                "Macro = " + str(fscore_macro), "Precision = " + str(prec), "Recall = " + str(rec)])
-        else:
-            spamwriter.writerow(["Conbinacion optima:"])
-            spamwriter.writerow(["K = " + str(indexK), "P = " + str(indexP), w, "Micro = " + str(fscore_micro), 
+        if es_final:
+            spamwriter.writerow(["Combinacion optima:"])
+            
+        spamwriter.writerow(["K = " + str(indexK), "P = " + str(indexP), w, "Micro = " + str(fscore_micro), 
                                 "Macro = " + str(fscore_macro), "Precision = " + str(prec), "Recall = " + str(rec)])
 
 def guardar_modelo(modelo, file):
@@ -134,7 +136,7 @@ def guardar_modelo(modelo, file):
 
 
 if __name__ == "__main__":
-    
+
     param = pedir_param()
 
     try:

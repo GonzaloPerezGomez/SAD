@@ -6,11 +6,35 @@ Recoge los datos de un fichero csv y los clasifica en función de los k vecinos 
 """
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 
 
 def preprocesadoKNN(datos: pd.DataFrame, conf: pd.DataFrame):
-    #TODO: Añadir preprocesado de textos (BOW, tf-idf)
+    #TODO: Añadir procesado de undersampling/oversampling
+
+    #Pasar las features de text a vectores numericos
+    tf = conf["preprocessing"]["text_features"]
+    tp = conf["preprocessing"]["text_process"]
+
+    for feature in tf:
+        if tp == "BOW" or tp == "one_hot":
+            v = CountVectorizer()
+        elif tp == "tf-idf":
+            v = TfidfVectorizer()
+         
+        # Aplicar la transformación
+        transformed = v.fit_transform(datos[feature].fillna(""))
+
+        if tp == "one_hot":
+            transformed[transformed>1] = 1
+
+        # Convertir a DataFrame y agregar nombres de columnas
+        df_transformed = pd.DataFrame(transformed.toarray(), 
+                                        columns=[f"{feature}_{i}" for i in range(transformed.shape[1])])
+            
+        # Eliminar la columna original y añadir las nuevas
+        datos = datos.drop(columns=[feature]).join(df_transformed)
 
     #Pasar las features categoriales a numericas
     encoder = LabelEncoder()
@@ -20,7 +44,7 @@ def preprocesadoKNN(datos: pd.DataFrame, conf: pd.DataFrame):
     for feature in cf:
         datos[feature] = encoder.fit_transform(datos[feature])
 
-    f = cf + nf
+    f = cf + nf + tf
 
     #Outliers
     o = conf["preprocessing"]["outliers"]
@@ -42,12 +66,13 @@ def preprocesadoKNN(datos: pd.DataFrame, conf: pd.DataFrame):
             limite_inferior = mean - 3 * std
             limite_superior = mean + 3 * std
 
+            datos[feature] = datos[feature].astype(float) #No es necesario pero numpy lo recomienda para avitar futuros problemas
+
         if o == "drop":
             datos = datos[((datos[feature]>=limite_inferior) & (datos[feature]<=limite_superior)) 
                           | (datos[feature].isna())]
 
         elif o == "round":
-            datos[feature] = datos[feature].astype(float) #No es necesario pero numpy lo recomienda para avitar futuros problemas
             datos.loc[datos[feature]<=limite_inferior, feature] = limite_inferior
             datos.loc[datos[feature]>=limite_superior, feature] = limite_superior
 
@@ -69,30 +94,32 @@ def preprocesadoKNN(datos: pd.DataFrame, conf: pd.DataFrame):
                 datos[feature] = datos[feature].fillna(datos[feature].mode())
 
     ##Reescalado
+    
     e = conf["preprocessing"]["scaling"]
 
     if e == "min-max":
         for feature in f:
-            min = datos[feature].min()
-            max = datos[feature].max()
-            try:
-                datos[feature] = (datos[feature] - min) / (max - min)
-            except ZeroDivisionError:
-                print(f"Atributo {feature} no se ha escalado dado que el min y el max es el mismo")
+            min_value = datos[feature].min()
+            max_value = datos[feature].max()
+            
+            if min_value != max_value:
+                datos[feature] = (datos[feature] - min_value) / (max_value - min_value)
+            else:
+                print(f"Atributo {feature} no se ha escalado porque min y max son iguales.")
 
     elif e == "avgstd":
         for feature in f:
             avg = datos[feature].mean()
             std = datos[feature].std()
-            try:
+            
+            if std != 0:
                 datos[feature] = (datos[feature] - avg) / std
-            except ZeroDivisionError:
-                print(f"Atributo {feature} no se ha escalado dado que de su desviación es 0")
+            else:
+                print(f"Atributo {feature} no se ha escalado porque su desviación estándar es 0.")
 
-    exit()
     return datos
   
-def kNN(data, k, weights, p, conf):
+def kNN(data: pd.DataFrame, k, weights, p, conf):
     """
     Función para implementar el algoritmo kNN
     
@@ -120,6 +147,7 @@ def kNN(data, k, weights, p, conf):
     # Entrenamos el modelo
     from sklearn.neighbors import KNeighborsClassifier
     classifier = KNeighborsClassifier(n_neighbors = k, weights = weights, p = p)
+    
     classifier.fit(X_train, y_train)
     
     # Predecimos los resultados
