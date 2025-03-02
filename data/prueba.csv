@@ -1,7 +1,7 @@
-Categorical Feature,Numerical Feature
-hola,1
-que,2
-tal,
-hola,4
-que,5
-tal,20
+Categorical Feature,Numerical Feature,Text_Feature
+hola,1,Buenas tardes que tengas un buen dia
+que,2,ME DEBES 30 EUROS CABRON
+tal,,No debes olvidar tu misión
+hola,4,:)hola 
+que,5,adios
+tal,20,COMO TaRDas

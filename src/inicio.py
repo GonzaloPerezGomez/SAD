@@ -120,12 +120,10 @@ def trainKNN(k, K, p, datos, file, conf):
 def gen_informe(es_final, date, indexK, indexP, w, fscore_micro, fscore_macro, prec, rec, file: str):
     with open(f'informes/informeKNN-{file}-{date}.csv', 'a', newline='') as csvfile:
         spamwriter = csv.writer(csvfile)
-        if not es_final:
-            spamwriter.writerow(["K = " + str(indexK), "P = " + str(indexP), w, "Micro = " + str(fscore_micro), 
-                                "Macro = " + str(fscore_macro), "Precision = " + str(prec), "Recall = " + str(rec)])
-        else:
-            spamwriter.writerow(["Conbinacion optima:"])
-            spamwriter.writerow(["K = " + str(indexK), "P = " + str(indexP), w, "Micro = " + str(fscore_micro), 
+        if es_final:
+            spamwriter.writerow(["Combinacion optima:"])
+            
+        spamwriter.writerow(["K = " + str(indexK), "P = " + str(indexP), w, "Micro = " + str(fscore_micro), 
                                 "Macro = " + str(fscore_macro), "Precision = " + str(prec), "Recall = " + str(rec)])
 
 def guardar_modelo(modelo, file):

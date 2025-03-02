@@ -1,6 +1,7 @@
 {
     "preprocessing":{
-        "categorical_features":[],
+        "text_features": [],
+        "categorical_features": [],
         "numerical_features": [],
         "missing_values": "",
         "impute_strategy": "",
@@ -11,6 +12,7 @@
         "sampling": ""
     },
     "opciones":{
+        "text_features": [],
         "categorical_features": [],
         "numerical_features": [],
         "missing_values": ["impute", "drop"],
