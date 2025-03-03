@@ -17,24 +17,25 @@ def preprocesadoKNN(datos: pd.DataFrame, conf: pd.DataFrame):
     tf = conf["preprocessing"]["text_features"]
     tp = conf["preprocessing"]["text_process"]
 
-    for feature in tf:
-        if tp == "BOW" or tp == "one_hot":
-            v = CountVectorizer()
-        elif tp == "tf-idf":
-            v = TfidfVectorizer()
-         
-        # Aplicar la transformación
-        transformed = v.fit_transform(datos[feature].fillna(""))
-
-        if tp == "one_hot":
-            transformed[transformed>1] = 1
-
-        # Convertir a DataFrame y agregar nombres de columnas
-        df_transformed = pd.DataFrame(transformed.toarray(), 
-                                        columns=[f"{feature}_{i}" for i in range(transformed.shape[1])])
+    if len(tf) != 0:
+        for feature in tf:
+            if tp == "BOW" or tp == "one_hot":
+                v = CountVectorizer()
+            elif tp == "tf-idf":
+                v = TfidfVectorizer()
             
-        # Eliminar la columna original y añadir las nuevas
-        datos = datos.drop(columns=[feature]).join(df_transformed)
+            # Aplicar la transformación
+            transformed = v.fit_transform(datos[feature].fillna(""))
+
+            if tp == "one_hot":
+                transformed[transformed>1] = 1
+
+            # Convertir a DataFrame y agregar nombres de columnas
+            df_transformed = pd.DataFrame(transformed.toarray(), 
+                                            columns=[f"{feature}_{i}" for i in range(transformed.shape[1])])
+                
+            # Eliminar la columna original y añadir las nuevas
+            datos = datos.drop(columns=[feature]).join(df_transformed)
 
     #Pasar las features categoriales a numericas
     encoder = LabelEncoder()
@@ -44,7 +45,10 @@ def preprocesadoKNN(datos: pd.DataFrame, conf: pd.DataFrame):
     for feature in cf:
         datos[feature] = encoder.fit_transform(datos[feature])
 
-    f = cf + nf + df_transformed.columns.tolist()
+    if len(tf) != 0:
+        f = cf + nf + df_transformed.columns.tolist()
+    else:
+        f = cf + nf
 
     #Outliers
     o = conf["preprocessing"]["outliers"]
