@@ -10,6 +10,8 @@ from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 
 
+#---------------------------------------------------------------------------------------------------------------------------------#
+
 def preprocesadoKNN(datos: pd.DataFrame, conf: pd.DataFrame):
     #TODO: Añadir procesado de undersampling/oversampling
 
@@ -17,14 +19,20 @@ def preprocesadoKNN(datos: pd.DataFrame, conf: pd.DataFrame):
     tf = conf["preprocessing"]["text_features"]
     tp = conf["preprocessing"]["text_process"]
 
+    #si json tenia almacenada una columna de texto
     if len(tf) != 0:
+        #por cada categoria que esta como texto
         for feature in tf:
+            #si se ha escogido BOW o one_hot
             if tp == "BOW" or tp == "one_hot":
+                #crea un vector binario/frecuencia por cada frase
                 v = CountVectorizer()
+            #si ha escogido tf-idf
             elif tp == "tf-idf":
+                #crea vectores como el BOW pero estos tienen peso en base a su frecuencia en las frases
                 v = TfidfVectorizer()
             
-            # Aplicar la transformación
+            # Aplicar la transformación de los datos 
             transformed = v.fit_transform(datos[feature].fillna(""))
 
             if tp == "one_hot":
@@ -124,7 +132,10 @@ def preprocesadoKNN(datos: pd.DataFrame, conf: pd.DataFrame):
     #Rebalanceo
 
     return datos
-  
+
+
+#---------------------------------------------------------------------------------------------------------------------------------#
+
 def kNN(data: pd.DataFrame, k, weights, p, conf):
     """
     Función para implementar el algoritmo kNN
