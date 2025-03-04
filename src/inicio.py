@@ -130,7 +130,7 @@ def guardar_modelo(modelo, file):
 
     import pickle 
     
-    nombreModel = f"models/TopModelKNN-{file}-{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.sav" 
+    nombreModel = f"models/TopModelKNN-{file}.sav" 
     saved_model = pickle.dump(modelo, open(nombreModel,'wb'))
     print('Modelo guardado correctamente empleando Pickle')
 
