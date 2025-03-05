@@ -5,7 +5,7 @@
         "numerical_features": ["Largo de sepalo","Ancho de sepalo","Largo de petalo","Ancho de petalo"],
         "missing_values": "impute",
         "impute_strategy": "mean",
-        "scaling": "min-max",
+        "scaling": "avgstd",
         "outliers": "round",
         "outliers_strategy": "quantile",
         "text_process": "tf-idf",
