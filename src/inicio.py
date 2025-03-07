@@ -2,6 +2,7 @@
 import csv
 import pandas as pd
 import kNN
+import preprocesado
 from datetime import datetime
 import tkinter as tk
 from tkinter import filedialog
@@ -36,8 +37,12 @@ def pedir_param():
     elif algoritmo == 1:
         #TODO: Definir alforitmo de arbol
         exit()
+
+    elif algoritmo == 2:
+        #TODO: Definir alforitmo de random forest
+        exit()
     
-    elif algoritmo ==2:
+    elif algoritmo ==3:
           #TODO: Definir alforitmo de ____________
         exit()
     else:
@@ -135,7 +140,7 @@ def trainKNN(k, K, p, datos, file, conf):
 
     #si no hay .json (preprocesado basico)
     if not(type(conf) is type(None)):
-        datos = kNN.preprocesadoKNN(datos, conf)
+        datos = preprocesado.preprocesadoKNN(datos, conf)
 
 
     for indexK in range(k, K+1):
