@@ -16,7 +16,7 @@ def pedir_param():
     root.withdraw()
 
     file = filedialog.askopenfilename(title="Selecciona un archivo CSV", filetypes=[("Archivos CSV", "*.csv")])
-    algoritmo = int(input("Selecciona el algoritmo a usar(KNN = 0, DT = 1, NB=2)"))
+    algoritmo = int(input("Selecciona el algoritmo a usar(KNN = 0, DT = 1, RF=2, NB=3)"))
 
     if algoritmo == 0:
         while True:
@@ -31,12 +31,28 @@ def pedir_param():
                 print("El valor de p debe ser 1 o 2")
             else:
                 break
+
         conf = input("Indique el fichero json para el preprocesado(dejar en blanco si no requiere preprocesado)")
         return [algoritmo, file, k, K, p, conf]
 
     elif algoritmo == 1:
         #TODO: Definir alforitmo de arbol
-        exit()
+         while True:
+            min_depth = int(input("Minima profundidad: "))
+            max_depth = int(input("Maxima profundidad"))
+            #Minimo de instancias por hoja
+            if min_depth <= 0 or max_depth <= 0:
+                print("Las profundidades no pueden ser menores que 1")
+            elif max_depth < min_depth:
+                print("El numero maximo de profundidad no puede ser mayor al numero minimo de profundidad")
+            elif p != 1 and p != 2:
+                print("El valor de p debe ser 1 o 2")
+            else:
+                break
+
+            conf = input("Indique el fichero json para el preprocesado(dejar en blanco si no requiere preprocesado): ")
+            exit()
+            return [algoritmo, file, k, K, p, conf]
 
     elif algoritmo == 2:
         #TODO: Definir alforitmo de random forest
@@ -77,114 +93,13 @@ def load_json(file):
         data = None
     return data
 
-
-#------------------------------------------------------------------------------------------------------------------------------#
-
-#realiza el calculo del fscore(equlibrio entre la precision y el recall)/ micro() y macro()
-def calculate_fscore(y_test, y_pred):
-    """
-    Función para calcular el F-score
-    :param y_test: Valores reales
-    :param y_pred: Valores predichos
-    :return: F-score (micro), F-score (macro)
-    """
-    from sklearn.metrics import f1_score
-    fscore_micro = f1_score(y_test, y_pred, average='micro')
-    fscore_macro = f1_score(y_test, y_pred, average='macro')
-    return fscore_micro, fscore_macro
-
-
-#------------------------------------------------------------------------------------------------------------------------------#
-
-#calcula la matriz de confusion comparando tanto los datos de test como los datos de la prediccion 
-def calculate_confusion_matrix(y_test, y_pred):
-    """
-    Función para calcular la matriz de confusión
-    :param y_test: Valores reales
-    :param y_pred: Valores predichos
-    :return: Matriz de confusión
-    """
-    from sklearn.metrics import confusion_matrix
-    cm = confusion_matrix(y_test, y_pred)
-    return cm
-
-
-#------------------------------------------------------------------------------------------------------------------------------#
-
-#mirar interior(info de average)
-
-#calcula la precision y el recall
-def calculate_prec_rec(y_test, y_pred):
-    """
-    opciones de average:
-        micro:calcula la global(no por calcula por apartados)
-        macro: calcula cada sector y saca el promedio
-        weighted: lo mismo que macro pero tiene efecto la cantidad de unidades en cada clase
-        sample:calcula cada muestra y el promedio
-        none: array con la precision de cada muestra
-    """
- 
-    from sklearn.metrics import precision_score, recall_score
-    return precision_score(y_test, y_pred, average="weighted"), recall_score(y_test, y_pred, average="weighted")
-
-#-------------------------------------------------------------------------------------------------------------------------------#
-
-#entrenamiento knn del modelo
-def trainKNN(k, K, p, datos, file, conf):
-    
-    top_fscore_micro = 0
-    weights = ["uniform", "distance"]
-
-    #obtenemos la hora
-    date = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-
-    #si no hay .json (preprocesado basico)
-    if not(type(conf) is type(None)):
-        datos = preprocesado.preprocesadoKNN(datos, conf)
-
-
-    for indexK in range(k, K+1):
-        for indexP in range(1, p+1):
-            for w in weights:
-                y_test, y_pred, model = kNN.kNN(datos, indexK, w, indexP, conf)
-                fscore_micro, fscore_macro = calculate_fscore(y_test, y_pred)
-                prec, rec = calculate_prec_rec(y_test, y_pred)
-                gen_informe(False, date, indexK, indexP, w, fscore_micro, fscore_macro, prec, rec, file)
-
-                if fscore_micro > top_fscore_micro:
-                    top_fscore_micro = fscore_micro
-                    top_model = model
-                    top_k = indexK
-                    top_p = indexP
-                    top_w = w
-                    top_fscore_macro = fscore_macro
-                    top_prec = prec
-                    top_rec = rec
-
-    gen_informe(True, date, top_k, top_p,top_w, top_fscore_micro, top_fscore_macro, top_prec, top_rec, file)
-    return top_model
-
-
-#--------------------------------------------------------------------------------------------------------------------------------#
-
-#
-def gen_informe(es_final, date, indexK, indexP, w, fscore_micro, fscore_macro, prec, rec, file: str):
-    with open(f'informes/informeKNN-{file}-{date}.csv', 'a', newline='') as csvfile:
-        spamwriter = csv.writer(csvfile)
-        if es_final:
-            spamwriter.writerow(["Combinacion optima:"])
-            
-        spamwriter.writerow(["K = " + str(indexK), "P = " + str(indexP), w, "Micro = " + str(fscore_micro), 
-                                "Macro = " + str(fscore_macro), "Precision = " + str(prec), "Recall = " + str(rec)])
-
-
 #--------------------------------------------------------------------------------------------------------------------------------#
 
 #guarda la informacion obtenida en el entrenamiento _____ en un fichero .sav que se encuentra en la carpeta informes
-def guardar_modelo(modelo, file):
+def guardar_modelo(modelo, file, algo):
     import pickle 
     
-    nombreModel = f"models/TopModelKNN-{file}.sav" 
+    nombreModel = f"models/{algo}/TopModel{algo}-{file}.sav" 
     saved_model = pickle.dump(modelo, open(nombreModel,'wb'))
     print('Modelo guardado correctamente empleando Pickle')
 
@@ -217,18 +132,21 @@ if __name__ == "__main__":
     if param[0] == 0:
         #entrenamos al modelo
         #   param[2]--> k   /  param[3]--> K   /  param[4]--> p
-        top_model = trainKNN(param[2], param[3], param[4], datos, file, prep)
+        top_model = kNN.trainKNN(param[2], param[3], param[4], datos, file, prep)
+        algo = "KNN"
 
 
     #si algoritmo es Arbol Binario
     elif param[0] == 1:
+        algo = "DT"
         #TODO:
         exit
     
     elif param[0] == 2:
+        algo = "RF"
         #TODO:
         exit
 
-    guardar_modelo(top_model, file)
+    guardar_modelo(top_model, file, algo)
 
 
