@@ -1,5 +1,5 @@
 Categorical Feature,Numerical Feature,Text_Feature,Target
-hola,1,Buenas tardes que tengas un buen dia,0
+,1,Buenas tardes que tengas un buen dia,0
 que,2,ME DEBES 30 EUROS CABRON,1
 tal,,No debes olvidar tu misión,1
 hola,4,:)hola ,1
