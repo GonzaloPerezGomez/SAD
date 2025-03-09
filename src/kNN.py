@@ -59,6 +59,7 @@ def gen_informe_KNN(es_final, date, indexK, indexP, w, fscore_micro, fscore_macr
         spamwriter.writerow(["K = " + str(indexK), "P = " + str(indexP), w, "Micro = " + str(fscore_micro), 
                                 "Macro = " + str(fscore_macro), "Precision = " + str(prec), "Recall = " + str(rec)])
 
+#--------------------------------------------------------------------------------------------------------------------------------#
 
 def kNN(data: pd.DataFrame, k, weights, p):
     """

@@ -110,7 +110,6 @@ def guardar_modelo(modelo, file, algo):
 if __name__ == "__main__":
     #pedir parametros(1ºproceso)
     param = pedir_param()
-
     try:
         #cargado de datos del file 
         datos = load_data(param[1])

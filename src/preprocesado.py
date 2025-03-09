@@ -1,9 +1,11 @@
 import pandas as pd
+from imblearn.over_sampling import RandomOverSampler
+from imblearn.under_sampling import RandomUnderSampler
 from sklearn.preprocessing import LabelEncoder
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+import spacy
 
 def preprocesadoKNN(datos: pd.DataFrame, conf: pd.DataFrame):
-    #TODO: Añadir procesado de undersampling/oversampling
 
     datos = text_to_numvec(datos, conf)
 
@@ -15,12 +17,69 @@ def preprocesadoKNN(datos: pd.DataFrame, conf: pd.DataFrame):
 
     datos = rescaling(datos, conf)
 
-    #Rebalanceo
+    datos = sampler(datos, conf)
 
     return datos
 
-def text_to_numvec(datos: pd.DataFrame, conf: pd.DataFrame):
+#------------------------------------------------------------------------#
 
+def preprocesadoDT(datos: pd.DataFrame, conf: pd.DataFrame):
+    #TODO: Falta realizar que preprocesado 
+
+    return datos
+
+#------------------------------------------------------------------------#
+
+def preprocesadoNB(datos: pd.DataFrame, conf: pd.DataFrame):
+    #TODO: Falta realizar que preprocesado, si los numero son 
+    datos = cat_to_num(datos, conf)
+
+    datos = outliers(datos, conf)
+
+    datos = missing_values(datos, conf)
+
+    datos = rescaling(datos, conf)
+
+    datos = sampler(datos, conf)
+
+    return datos
+
+
+
+#--------------------------------------------------------------------------------------------------------------------------------#
+
+#llamadas de los preprocesados de arriba
+
+#--------------------------------------------------------------------------------------------------------------------------------#
+
+
+
+def sampler(datos: pd.DataFrame, conf: pd.DataFrame):
+    columna_objetivo = conf["preprocessing"]["target"][0]
+    atrib = datos.drop(columns= [columna_objetivo])
+    targ = datos[columna_objetivo]
+    #TODO: no se como hacer lo del rebalanceo en base a unos parametros puedo en base a dos 20-80 o asi  
+
+    if conf["preprocessing"]["sampling"]== "undersampling":
+        sampler = RandomUnderSampler(random_state=42)
+    elif conf["preprocessing"]["sampling"]== "oversampling":
+        sampler = RandomOverSampler(random_state=42)
+    else:
+        return datos
+
+    variable_balanceado, targ_balanceado = sampler.fit_resample(atrib, targ)
+    variable_balanceado_df = pd.DataFrame(variable_balanceado, columns=atrib.columns)
+    targ_balanceado_df = pd.DataFrame(targ_balanceado, columns=[columna_objetivo])
+    datos_balanceados = pd.concat([variable_balanceado_df, targ_balanceado_df], axis=1)
+
+    return datos_balanceados
+
+
+#--------------------------------------------------------------------------------------------------------------------------------#
+
+
+def text_to_numvec(datos: pd.DataFrame, conf: pd.DataFrame):
+    
     #Pasar las features de text a vectores numericos
     tf = conf["preprocessing"]["text_features"]
     tp = conf["preprocessing"]["text_process"]
@@ -29,6 +88,10 @@ def text_to_numvec(datos: pd.DataFrame, conf: pd.DataFrame):
     if len(tf) != 0:
         #por cada categoria que esta como texto
         for feature in tf:
+            #lematizamos las palabras 
+            nlp = spacy.load("es_core_news_sm")#español
+            #nlp = spacy.load("en_core_news_sm")#ingles
+            datos[feature]  = datos[feature].apply(lambda texto: " ".join([palabra.lemma_ for palabra in nlp(texto) if not palabra.is_stop]))
             #si se ha escogido BOW o one_hot
             if tp == "BOW" or tp == "one_hot":
                 #crea un vector binario/frecuencia por cada frase
@@ -53,12 +116,20 @@ def text_to_numvec(datos: pd.DataFrame, conf: pd.DataFrame):
 
     return datos
 
+
+#--------------------------------------------------------------------------------------------------------------------------------#
+
+
 def cat_to_num(datos: pd.DataFrame, conf: pd.DataFrame):
 
     #Pasar las features categoriales a numericas
     encoder = LabelEncoder()
-    cf = conf["preprocessing"]["categorical_features"]
-    
+    if conf["preprocessing"]["targ_categorial"]== "True" :
+
+        cf = conf["preprocessing"]["categorical_features"]+ conf["preprocessing"]["target"]
+    else:
+        cf = conf["preprocessing"]["categorical_features"]
+
     for feature in cf:
         datos[feature] = encoder.fit_transform(datos[feature])
 
@@ -100,6 +171,10 @@ def outliers(datos: pd.DataFrame, conf: pd.DataFrame):
     
     return datos
 
+
+#--------------------------------------------------------------------------------------------------------------------------------#
+
+
 def missing_values(datos: pd.DataFrame, conf: pd.DataFrame):
 
     nf = conf["preprocessing"]["numerical_features"]
@@ -127,12 +202,15 @@ def missing_values(datos: pd.DataFrame, conf: pd.DataFrame):
 
     return datos
 
+#--------------------------------------------------------------------------------------------------------------------------------#
+
+
 def rescaling(datos: pd.DataFrame, conf: pd.DataFrame):
 
     ##Reescalado
     nf = conf["preprocessing"]["numerical_features"]
     cf = conf["preprocessing"]["categorical_features"]
-    f = nf + cf
+    f = nf + cf 
 
     e = conf["preprocessing"]["scaling"]
 
@@ -155,5 +233,13 @@ def rescaling(datos: pd.DataFrame, conf: pd.DataFrame):
                 datos[feature] = (datos[feature] - avg) / std
             else:
                 print(f"Atributo {feature} no se ha escalado porque su desviación estándar es 0.")
+    
+    elif e == "entreMax":
+        for feature in f:
+            max = datos[feature].max()
+            if max != 0:
+                datos[feature] = datos[feature]/max
+            else:
+                print(f"Atributo {feature} no se ha escalado porque su maximo estándar es 0.")
 
     return datos

@@ -3,6 +3,8 @@
         "text_features" : ["Text_Feature"],
         "categorical_features": ["Categorical Feature"],
         "numerical_features": ["Numerical Feature"],
+        "target": ["Target"],
+        "targ_categorial": "False",
         "missing_values": "impute",
         "impute_strategy": "mean",
         "scaling": "min-max",
