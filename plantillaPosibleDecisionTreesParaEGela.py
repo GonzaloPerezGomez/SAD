@@ -54,9 +54,8 @@ def parse_args():
     parse = argparse.ArgumentParser(description="Practica de algoritmos de clasificación de datos.")
     parse.add_argument("-m", "--mode", help="Modo de ejecución (train o test)", required=True)
     parse.add_argument("-f", "--file", help="Fichero csv (/Path_to_file)", required=True)
+    parse.add_argument("-p", "--preprocess", help="Fichero json (/Path_to_file)", required=True)
     parse.add_argument("-a", "--algorithm", help="Algoritmo a ejecutar (kNN, decision_tree o random_forest)", required=True)
-    parse.add_argument("-p", "--prediction", help="Columna a predecir (Nombre de la columna)", required=True)
-    parse.add_argument("-e", "--estimator", help="Estimador a utilizar para elegir el mejor modelo https://scikit-learn.org/stable/modules/model_evaluation.html#scoring-parameter", required=False, default=None)
     parse.add_argument("-c", "--cpu", help="Número de CPUs a utilizar [-1 para usar todos]", required=False, default=-1, type=int)
     parse.add_argument("-v", "--verbose", help="Muestra las metricas por la terminal", required=False, default=False, action="store_true")
     parse.add_argument("--debug", help="Modo debug [Muestra informacion extra del preprocesado y almacena el resultado del mismo en un .csv]", required=False, default=False, action="store_true")
@@ -64,7 +63,7 @@ def parse_args():
     args = parse.parse_args()
     
     # Leemos los parametros del JSON
-    with open('clasificador.json') as json_file:
+    with open(args.preprocess) as json_file:
         config = json.load(json_file)
     
     # Juntamos todo en una variable
@@ -91,7 +90,53 @@ def load_data(file):
 
 # Funciones para calcular métricas
 
-# TODO Aqui poned lo que hayais hecho
+#realiza el calculo del fscore(equlibrio entre la precision y el recall)/ micro() y macro()
+def calculate_fscore(y_test, y_pred):
+    """
+    Función para calcular el F-score
+    :param y_test: Valores reales
+    :param y_pred: Valores predichos
+    :return: F-score (micro), F-score (macro)
+    """
+    from sklearn.metrics import f1_score
+    fscore_micro = f1_score(y_test, y_pred, average='micro')
+    fscore_macro = f1_score(y_test, y_pred, average='macro')
+    return fscore_micro, fscore_macro
+
+
+#------------------------------------------------------------------------------------------------------------------------------#
+
+#calcula la matriz de confusion comparando tanto los datos de test como los datos de la prediccion 
+def calculate_confusion_matrix(y_test, y_pred):
+    """
+    Función para calcular la matriz de confusión
+    :param y_test: Valores reales
+    :param y_pred: Valores predichos
+    :return: Matriz de confusión
+    """
+    from sklearn.metrics import confusion_matrix
+    cm = confusion_matrix(y_test, y_pred)
+    return cm
+
+
+#------------------------------------------------------------------------------------------------------------------------------#
+
+#mirar interior(info de average)
+
+#calcula la precision y el recall
+def calculate_prec_rec(y_test, y_pred):
+    """
+    opciones de average:
+        micro:calcula la global(no por calcula por apartados)
+        macro: calcula cada sector y saca el promedio
+        weighted: lo mismo que macro pero tiene efecto la cantidad de unidades en cada clase
+        sample:calcula cada muestra y el promedio
+        none: array con la precision de cada muestra
+    """
+ 
+    from sklearn.metrics import precision_score, recall_score
+    return precision_score(y_test, y_pred, average="weighted"), recall_score(y_test, y_pred, average="weighted")
+
 
 # Funciones para preprocesar los datos
 
