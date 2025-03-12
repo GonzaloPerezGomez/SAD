@@ -34,11 +34,7 @@ def preprocesadoNB(datos: pd.DataFrame, conf: pd.DataFrame):
     #TODO: Falta realizar que preprocesado, si los numero son 
     datos = cat_to_num(datos, conf)
 
-    datos = outliers(datos, conf)
-
     datos = missing_values(datos, conf)
-
-    datos = rescaling(datos, conf)
 
     datos = sampler(datos, conf)
 
@@ -59,6 +55,9 @@ def sampler(datos: pd.DataFrame, conf: pd.DataFrame):
     atrib = datos.drop(columns= [columna_objetivo])
     targ = datos[columna_objetivo]
     #TODO: no se como hacer lo del rebalanceo en base a unos parametros puedo en base a dos 20-80 o asi  
+
+    
+
 
     if conf["preprocessing"]["sampling"]== "undersampling":
         sampler = RandomUnderSampler(random_state=42)
