@@ -1,14 +1,40 @@
 {
     "preprocessing":{
-        "text_features": [],
-        "categorical_features": [],
-        "numerical_features": ["Largo de sepalo","Ancho de sepalo","Largo de petalo","Ancho de petalo"],
+        "target": "Especie",
+        "targ_categorial": "True",
+        "unique_category_threshold": "10",
         "missing_values": "impute",
         "impute_strategy": "mean",
         "scaling": "avgstd",
         "outliers": "round",
-        "outliers_strategy": "quantile",
+        "round_strategy": "quantile",
         "text_process": "tf-idf",
-        "sampling": "undersampling"
+        "sampling": "undersampling",
+        "drop_features": []
+    },
+
+    "metrics":{
+        "evaluation": ["f1_micro","accuracy","precision_micro","recall_micro"],
+        "best_model":"f1_micro"
+    },
+
+    "kNN":{
+        "k": "1",
+        "K": "10",
+        "p": "2"
+    },
+
+    "DT":{
+        "min_depth": "",
+        "max_depth": "",
+        "intervalo_sample_per_leaf": ["", ""]
+    },
+
+    "RF":{
+
+    },
+
+    "NB":{
+
     }
 }

@@ -47,13 +47,13 @@
         "impute_strategy": ["mean", "mode", "median"],
         "scaling": ["min-max", "avgstd", "entreMax"],
         "outliers": ["round", "drop"],
-        "outliers_strategy": ["quantile", "std"],
+        "round_strategy": ["quantile", "std"],
         "text_process": ["BOW", "one_hot", "tf-idf"],
         "sampling": ["undersampling", "oversampling", "none"],
         "drop_features": [],
 
 
-        "evalucation": ["F-score","acuracy", "precision", "recall", "specifity"],
-        "best_model":["F-score","acuracy", "precision", "recall", "specifity"]
+        "evalucation": ["f1","accuracy", "precision", "recall", "specifity"],
+        "best_model":["f1","accuracy", "precision", "recall", "specifity"]
     }
 }

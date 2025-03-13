@@ -14,8 +14,8 @@
     },
 
     "metric":{
-        "evaluation": [],
-        "best_model":""
+        "evaluation": ["F-score","acuracy", "precision", "recall", "specifity"],
+        "best_model":"F-score"
     },
 
     "kNN":{
