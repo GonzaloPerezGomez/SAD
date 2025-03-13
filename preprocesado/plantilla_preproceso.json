@@ -1,14 +1,16 @@
 {
     "preprocessing":{
-        "target": [],
+        "target": "",
+        "targ_categorial": "",
+        "unique_category_threshold": "",
         "missing_values": "",
         "impute_strategy": "",
         "scaling": "",
         "outliers": "",
         "round_strategy": "",
         "text_process": "",
-        "sampling": ""
-
+        "sampling": "",
+        "drop_features": []
     },
 
     "metric":{
@@ -16,10 +18,31 @@
         "best_model":""
     },
 
+    "kNN":{
+        "k": "",
+        "K": "",
+        "p": ""
+    },
+
+    "DT":{
+        "min_depth": "",
+        "max_depth": "",
+        "intervalo_sample_per_leaf": ["", ""]
+    },
+
+    "RF":{
+
+    },
+
+    "NB":{
+
+    },
+
 
 
     "opciones":{
-        "target": [],
+        "target": "",
+        "targ_categorial": "True/False",
         "missing_values": ["impute", "drop"],
         "impute_strategy": ["mean", "mode", "median"],
         "scaling": ["min-max", "avgstd", "entreMax"],
@@ -27,6 +50,7 @@
         "outliers_strategy": ["quantile", "std"],
         "text_process": ["BOW", "one_hot", "tf-idf"],
         "sampling": ["undersampling", "oversampling", "none"],
+        "drop_features": [],
 
 
         "evalucation": ["F-score","acuracy", "precision", "recall", "specifity"],
