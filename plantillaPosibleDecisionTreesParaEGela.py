@@ -215,7 +215,7 @@ def process_missing_values(numerical_feature, categorical_feature):
 
         print(Fore.GREEN+f"Missing values tratados correctamente con la accion: {mv} y estrategia: {ist}"+Fore.RESET)
     
-    except Exception(e):
+    except Exception as e:
         print(Fore.RED+"Error al tratar missing values"+Fore.RESET)
         print(e)
 
@@ -273,7 +273,7 @@ def reescaler(numerical_feature):
 
         print(Fore.GREEN+f"Reescalado realizado correctamente con: {e}"+Fore.RESET)
     
-    except Exception(e):
+    except Exception as e:
         print(Fore.RED+"Error al realizar el reescalado"+Fore.RESET)
         print(e)
 
@@ -303,7 +303,7 @@ def cat2num(categorical_feature):
 
         print(Fore.GREEN+"Columnas categoriales numerizadas correctamente"+Fore.RESET)
 
-    except Exception(e):
+    except Exception as e:
         print(Fore.RED+"Error al numerizar las columnas categoriales"+Fore.RESET)
         print(e)
 
@@ -430,7 +430,7 @@ def outliers(numerical_feature):
     nf = numerical_feature
 
     o = args.preprocessing["outliers"]
-    ost = args.preprocessing["outliers_strategy"]
+    ost = args.preprocessing["round_strategy"]
 
     global data
 
@@ -463,7 +463,7 @@ def outliers(numerical_feature):
 
         print(Fore.GREEN+f"Outliers tratados correctamente con la accion: {o} y estrategia: {ost}"+Fore.RESET)
     
-    except Exception(e):
+    except Exception as e:
         print(Fore.RED+"Error al tratar outliers"+Fore.RESET)
         print(e)
 
@@ -503,39 +503,19 @@ def preprocesar_datos():
 
         # Reescalamos los datos numéricos
         reescaler(numerical_feature)
-        
-        # Realizamos Oversampling o Undersampling
-        over_under_sampling()
-
-        drop_features()
 
     elif args.algorithm == 'DT':
         pass
     elif args.algorithm == 'RF':
-        pass
+        pass 
     elif args.algorithm == 'NB':
         pass
-    
 
-    # Simplificamos el texto
-    simplify_text(text_feature)
+    if args.mode == "train":
+        # Realizamos Oversampling o Undersampling
+        over_under_sampling()
 
-    # Pasar los datos a categoriales a numéricos
-    cat2num(categorical_feature)
-
-    # Tratamos missing values
-    process_missing_values(numerical_feature, categorical_feature)
-
-    # Reescalamos los datos numéricos
-    reescaler(numerical_feature)
-    
-    # Tratamos el texto
-    process_text(text_feature)
-    
-    # Realizamos Oversampling o Undersampling
-    over_under_sampling()
-
-    drop_features()
+        drop_features()
 
 # Funciones para entrenar un modelo
 
@@ -553,8 +533,16 @@ def divide_data():
     - y_train: Serie con las etiquetas de entrenamiento.
     - y_dev: Serie con las etiquetas de desarrollo.
     """
-    # Sacamos la columna a predecir
- #TODO
+    # Seleccionamos las características y la clase
+    y = data[args.preprocessing["target"]] # Última columna
+    x = data.drop(columns=args.preprocessing["target"])# Todas las columnas menos la última
+
+    # Dividimos los datos en entrenamiento y test
+    from sklearn.model_selection import train_test_split
+    np.random.seed(42)  # Set a random seed for reproducibility
+    x_train, x_dev, y_train, y_dev = train_test_split(x.values, y.values, test_size=0.3)
+
+    return x_train, x_dev, y_train, y_dev
  
  
 def save_model(gs):
@@ -568,15 +556,19 @@ def save_model(gs):
     - Exception: Si ocurre algún error al guardar el modelo.
 
     """
+
+    results = gs.cv_results_
+    df_results = pd.DataFrame(results)
+    hp = [col for col in df_results.columns if col.startswith('param_')]
+    scores = [f'mean_test_{metric}' for metric in args.metrics["evaluation"]]
+    final_results = df_results[hp + scores].copy()
+    final_results.to_csv("output/informe.csv", index=False)
+
     try:
         with open('output/modelo.pkl', 'wb') as file:
             pickle.dump(gs, file)
             print(Fore.CYAN+"Modelo guardado con éxito"+Fore.RESET)
-        with open('output/modelo.csv', 'w') as file:
-            writer = csv.writer(file)
-            writer.writerow(['Params', 'Score'])
-            for params, score in zip(gs.cv_results_['params'], gs.cv_results_['mean_test_score']):
-                writer.writerow([params, score])
+
     except Exception as e:
         print(Fore.RED+"Error al guardar el modelo"+Fore.RESET)
         print(e)
@@ -618,11 +610,18 @@ def kNN():
     """
     # Dividimos los datos en entrenamiento y dev
     x_train, x_dev, y_train, y_dev = divide_data()
+
+    hp = {
+        'n_neighbors': range(int(args.kNN["k"]), int(args.kNN["K"])),
+        'weights': ["uniform", "distance"],
+        'metric': ["euclidean", "manhattan"],
+        'p': range(1, int(args.kNN["p"]))
+        }
     
     # Hacemos un barrido de hiperparametros
 
     with tqdm(total=100, desc='Procesando kNN', unit='iter', leave=True) as pbar:
-        gs = GridSearchCV(KNeighborsClassifier(), args.kNN, cv=5, n_jobs=args.cpu, scoring=args.estimator)
+        gs = GridSearchCV(KNeighborsClassifier(), hp, cv=5, n_jobs=args.cpu, scoring=args.metrics["evaluation"], refit=args.metrics["best_model"])
         start_time = time.time()
         gs.fit(x_train, y_train)
         end_time = time.time()
@@ -730,21 +729,25 @@ def predict():
     """
     global data
     # Predecimos
-    prediction = model.predict(data)
+    prediction = model.predict(data.values)
     
     # Añadimos la prediccion al dataframe data
-    data = pd.concat([data, pd.DataFrame(prediction, columns=[args.prediction])], axis=1)
+    data = pd.concat([data, pd.DataFrame(prediction, columns=[args.preprocessing["target"]])], axis=1)
     
 # Función principal
 
 if __name__ == "__main__":
+
     # Fijamos la semilla
     np.random.seed(42)
     print("=== Clasificador ===")
+
     # Manejamos la señal SIGINT (Ctrl+C)
     signal.signal(signal.SIGINT, signal_handler)
+
     # Parseamos los argumentos
     args = parse_args()
+
     # Si la carpeta output no existe la creamos
     print("\n- Creando carpeta output...")
     try:
@@ -756,24 +759,29 @@ if __name__ == "__main__":
         print(Fore.RED+"Error al crear la carpeta output"+Fore.RESET)
         print(e)
         sys.exit(1)
+
     # Cargamos los datos
     print("\n- Cargando datos...")
     data = load_data(args.file)
+
     # Descargamos los recursos necesarios de nltk
     print("\n- Descargando diccionarios...")
     nltk.download('stopwords')
     nltk.download('punkt_tab')
     nltk.download('wordnet')
+
     # Preprocesamos los datos
     print("\n- Preprocesando datos...")
     preprocesar_datos()
     if args.debug:
         try:
             print("\n- Guardando datos preprocesados...")
-            data.to_csv(f'output/{args.file}-processed.csv', index=False)
+            data.to_csv(f'output/{args.file.split("/")[-1].split(".csv")[0]}-processed.csv', index=False)
             print(Fore.GREEN+"Datos preprocesados guardados con éxito"+Fore.RESET)
         except Exception as e:
             print(Fore.RED+"Error al guardar los datos preprocesados"+Fore.RESET)
+            print(e)
+
     if args.mode == "train":
         # Ejecutamos el algoritmo seleccionado
         print("\n- Ejecutando algoritmo...")
@@ -801,17 +809,20 @@ if __name__ == "__main__":
         else:
             print(Fore.RED+"Algoritmo no soportado"+Fore.RESET)
             sys.exit(1)
+
     elif args.mode == "test":
+
         # Cargamos el modelo
         print("\n- Cargando modelo...")
         model = load_model()
+
         # Predecimos
         print("\n- Prediciendo...")
         try:
             predict()
             print(Fore.GREEN+"Predicción realizada con éxito"+Fore.RESET)
             # Guardamos el dataframe con la prediccion
-            data.to_csv('output/data-prediction.csv', index=False)
+            data.to_csv(f'output/{args.file.split("/")[-1].split(".csv")[0]}-prediction.csv', index=False)
             print(Fore.GREEN+"Predicción guardada con éxito"+Fore.RESET)
             sys.exit(0)
         except Exception as e:
