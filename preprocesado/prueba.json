@@ -1,16 +1,40 @@
 {
     "preprocessing":{
-        "text_features" : ["Text_Feature"],
-        "categorical_features": ["Categorical Feature"],
-        "numerical_features": ["Numerical Feature"],
-        "target": ["Target"],
+        "target": "Target",
         "targ_categorial": "False",
+        "unique_category_threshold": "4",
         "missing_values": "impute",
         "impute_strategy": "mean",
         "scaling": "min-max",
         "outliers": "round",
-        "outliers_strategy": "std",
-        "text_process": "one_hot",
-        "sampling": "undersampling"
+        "round_strategy": "std",
+        "text_process": "tf-idf",
+        "sampling": "undersampling",
+        "drop_features": []
+    },
+
+    "metric":{
+        "evaluation": [],
+        "best_model":""
+    },
+
+    "kNN":{
+        "k": "",
+        "K": "",
+        "p": ""
+    },
+
+    "DT":{
+        "min_depth": "",
+        "max_depth": "",
+        "intervalo_sample_per_leaf": ["", ""]
+    },
+
+    "RF":{
+
+    },
+
+    "NB":{
+
     }
 }

@@ -150,17 +150,17 @@ def select_features():
         categorical_feature (DataFrame): DataFrame que contiene las características categóricas.
     """
     try:
+        target = args.preprocessing["target"]
         # Numerical features
         numerical_feature = data.select_dtypes(include=['int64', 'float64']) # Columnas numéricas
-        if args.prediction in numerical_feature.columns:
-            numerical_feature = numerical_feature.drop(columns=[args.prediction])
+        if target in numerical_feature.columns:
+            numerical_feature = numerical_feature.drop(columns=[target])
         # Categorical features
         categorical_feature = data.select_dtypes(include='object')
-        categorical_feature = categorical_feature.loc[:, categorical_feature.nunique() <= args.preprocessing["unique_category_threshold"]]
+        categorical_feature = categorical_feature.loc[:, categorical_feature.nunique() <= int(args.preprocessing["unique_category_threshold"])]
         
         # Text features
         text_feature = data.select_dtypes(include='object').drop(columns=categorical_feature.columns)
-
         print(Fore.GREEN+"Datos separados con éxito"+Fore.RESET)
         
         if args.debug:
@@ -187,6 +187,38 @@ def process_missing_values(numerical_feature, categorical_feature):
     Raises:
         None
     """
+    nf = numerical_feature
+    cf = categorical_feature
+
+    #Tratamiento de missing values
+    mv = args.preprocessing["missing_values"]
+    ist = args.preprocessing["impute_strategy"]
+
+    global data
+
+    try:
+        if mv == "drop":
+            data = data.dropna()
+        elif mv == "impute":
+            if ist == "mean":
+                for feature in nf:
+                    data[feature] = data[feature].fillna(data[feature].mean())
+            if ist == "median":
+                for feature in nf:
+                    data[feature] = data[feature].fillna(data[feature].median())
+            if ist == "mode":
+                for feature in nf:
+                    data[feature] = data[feature].fillna(data[feature].mode())
+
+        for feature in cf:
+            data[feature] = data[feature].fillna(data[feature].mode())
+
+        print(Fore.GREEN+f"Missing values tratados correctamente con la accion: {mv} y estrategia: {ist}"+Fore.RESET)
+    
+    except Exception(e):
+        print(Fore.RED+"Error al tratar missing values"+Fore.RESET)
+        print(e)
+
 #TODO aqui lo que hayais hecho
 
 def reescaler(numerical_feature):
@@ -203,6 +235,48 @@ def reescaler(numerical_feature):
         Exception: Si hay un error al reescalar los datos.
 
     """
+    ##Reescalado
+    f = numerical_feature
+
+    e = args.preprocessing["scaling"]
+
+    global data
+
+    try:
+        if e == "min-max":
+            for feature in f:
+                min_value = data[feature].min()
+                max_value = data[feature].max()
+                
+                if min_value != max_value:
+                    data[feature] = (data[feature] - min_value) / (max_value - min_value)
+                else:
+                    print(f"Atributo {feature} no se ha escalado porque min y max son iguales.")
+
+        elif e == "avgstd":
+            for feature in f:
+                avg = data[feature].mean()
+                std = data[feature].std()
+                
+                if std != 0:
+                    data[feature] = (data[feature] - avg) / std
+                else:
+                    print(f"Atributo {feature} no se ha escalado porque su desviación estándar es 0.")
+        
+        elif e == "entreMax":
+            for feature in f:
+                max = data[feature].max()
+                if max != 0:
+                    data[feature] = data[feature]/max
+                else:
+                    print(f"Atributo {feature} no se ha escalado porque su maximo estándar es 0.")
+
+        print(Fore.GREEN+f"Reescalado realizado correctamente con: {e}"+Fore.RESET)
+    
+    except Exception(e):
+        print(Fore.RED+"Error al realizar el reescalado"+Fore.RESET)
+        print(e)
+
 #TODO aqui reescalar
 
 def cat2num(categorical_feature):
@@ -213,6 +287,26 @@ def cat2num(categorical_feature):
     categorical_feature (DataFrame): El DataFrame que contiene las características categóricas a convertir.
 
     """
+    #Pasar las features categoriales a numericas
+    global data
+
+    try:
+        encoder = LabelEncoder()
+        cf = categorical_feature
+
+        if args.preprocessing["targ_categorial"]== "True" :
+
+            cf += args.preprocessing["target"]
+
+        for feature in cf:
+            data[feature] = encoder.fit_transform(data[feature])
+
+        print(Fore.GREEN+"Columnas categoriales numerizadas correctamente"+Fore.RESET)
+
+    except Exception(e):
+        print(Fore.RED+"Error al numerizar las columnas categoriales"+Fore.RESET)
+        print(e)
+
 #TODO aqui lo que haga falta para pasar de categorial a numerico
 
 def simplify_text(text_feature):
@@ -225,6 +319,20 @@ def simplify_text(text_feature):
     Retorna:
     None
     """
+    global data
+
+    # Inicializar el stemmer y las stopwords
+    stemmer = PorterStemmer()
+    stop_words = set(stopwords.words('english'))
+
+    # Procesar cada columna de texto
+    for col in text_feature:
+        data[col] = text_feature[col].astype(str).str.lower()  # Convertir a minúsculas
+        data[col] = text_feature[col].apply(lambda x: ' '.join([
+            stemmer.stem(word) for word in word_tokenize(x)
+            if word.isalpha() and word not in stop_words
+        ]))
+
  #TODO aqui lo que sea preciso en caso de tener texto
 
 def process_text(text_feature):
@@ -246,7 +354,7 @@ def process_text(text_feature):
                data = pd.concat([data, text_features_df], axis=1)
                data.drop(text_feature.columns, axis=1, inplace=True)
                print(Fore.GREEN+"Texto tratado con éxito usando TF-IDF"+Fore.RESET)
-            elif args.preprocessing["text_process"] == "bow":
+            elif args.preprocessing["text_process"] == "BOW":
                 bow_vecotirizer = CountVectorizer()
                 text_data = data[text_feature.columns].apply(lambda x: ' '.join(x.astype(str)), axis=1)
                 bow_matrix = bow_vecotirizer.fit_transform(text_data)
@@ -275,6 +383,27 @@ def over_under_sampling():
     Raises:
         Exception: Si ocurre algún error al realizar el oversampling o undersampling.
     """
+    global data
+
+    columna_objetivo = args.preprocessing["target"]
+    atrib = data.drop(columns= [columna_objetivo])
+    targ = data[columna_objetivo]
+    #TODO: no se como hacer lo del rebalanceo en base a unos parametros puedo en base a dos 20-80 o asi  
+
+    
+
+
+    if args.preprocessing["sampling"]== "undersampling":
+        sampler = RandomUnderSampler(random_state=42)
+    elif args.preprocessing["sampling"]== "oversampling":
+        sampler = RandomOverSampler(random_state=42)
+
+    variable_balanceado, targ_balanceado = sampler.fit_resample(atrib, targ)
+    variable_balanceado_df = pd.DataFrame(variable_balanceado, columns=atrib.columns)
+    targ_balanceado_df = pd.DataFrame(targ_balanceado, columns=[columna_objetivo])
+    datos_balanceados = pd.concat([variable_balanceado_df, targ_balanceado_df], axis=1)
+
+    data = datos_balanceados
   
 
 def drop_features():
@@ -294,6 +423,50 @@ def drop_features():
         print(e)
         sys.exit(1)
 
+
+def outliers(numerical_feature):
+
+    #Outliers
+    nf = numerical_feature
+
+    o = args.preprocessing["outliers"]
+    ost = args.preprocessing["outliers_strategy"]
+
+    global data
+
+    try:
+        for feature in nf:
+            if ost == "quantile":
+                Q1 = data[feature].quantile(0.25)
+                Q3 = data[feature].quantile(0.75)
+                IQR = Q3 - Q1
+
+                limite_inferior = Q1 - 1.5 * IQR
+                limite_superior = Q3 + 1.5 * IQR
+            
+            elif ost == "std":
+                mean = data[feature].mean()
+                std = data[feature].std()
+
+                limite_inferior = mean - 3 * std
+                limite_superior = mean + 3 * std
+
+                data[feature] = data[feature].astype(float) #No es necesario pero numpy lo recomienda para avitar futuros problemas
+
+            if o == "drop":
+                data = data[((data[feature]>=limite_inferior) & (data[feature]<=limite_superior)) 
+                            | (data[feature].isna())]
+
+            elif o == "round":
+                data.loc[data[feature]<=limite_inferior, feature] = limite_inferior
+                data.loc[data[feature]>=limite_superior, feature] = limite_superior
+
+        print(Fore.GREEN+f"Outliers tratados correctamente con la accion: {o} y estrategia: {ost}"+Fore.RESET)
+    
+    except Exception(e):
+        print(Fore.RED+"Error al tratar outliers"+Fore.RESET)
+        print(e)
+
 def preprocesar_datos():
     """
     Función para preprocesar los datos
@@ -310,6 +483,39 @@ def preprocesar_datos():
     """
     # Separamos los datos por tipos
     numerical_feature, text_feature, categorical_feature = select_features()
+
+    if args.algorithm == 'kNN':
+
+        # Simplificamos el texto
+        simplify_text(text_feature)
+
+        # Tratamos el texto
+        process_text(text_feature)
+
+        # Pasar los datos a categoriales a numéricos
+        cat2num(categorical_feature)
+
+        #Outliers
+        outliers(numerical_feature)
+
+        # Tratamos missing values
+        process_missing_values(numerical_feature, categorical_feature)
+
+        # Reescalamos los datos numéricos
+        reescaler(numerical_feature)
+        
+        # Realizamos Oversampling o Undersampling
+        over_under_sampling()
+
+        drop_features()
+
+    elif args.algorithm == 'DT':
+        pass
+    elif args.algorithm == 'RF':
+        pass
+    elif args.algorithm == 'NB':
+        pass
+    
 
     # Simplificamos el texto
     simplify_text(text_feature)
@@ -330,8 +536,6 @@ def preprocesar_datos():
     over_under_sampling()
 
     drop_features()
-
-    return data
 
 # Funciones para entrenar un modelo
 
@@ -450,7 +654,7 @@ def decision_tree():
     x_train, x_dev, y_train, y_dev = divide_data()
     
     # Hacemos un barrido de hiperparametros
-    with tqdm(total=100, desc='Procesando decision tree', unit='iter', leave=True) as pbar:
+    #with tqdm(total=100, desc='Procesando decision tree', unit='iter', leave=True) as pbar:
         #TODO Llamar al decision trees
         #gs = GridSearchCV(
    
@@ -480,7 +684,7 @@ def random_forest():
     x_train, x_dev, y_train, y_dev = divide_data()
     
     # Hacemos un barrido de hiperparametros
-    with tqdm(total=100, desc='Procesando random forest', unit='iter', leave=True) as pbar:
+    #with tqdm(total=100, desc='Procesando random forest', unit='iter', leave=True) as pbar:
         #TODO Llamar al decision trees
         #gs = GridSearchCV(
     execution_time = end_time - start_time
@@ -558,7 +762,7 @@ if __name__ == "__main__":
     # Descargamos los recursos necesarios de nltk
     print("\n- Descargando diccionarios...")
     nltk.download('stopwords')
-    nltk.download('punkt')
+    nltk.download('punkt_tab')
     nltk.download('wordnet')
     # Preprocesamos los datos
     print("\n- Preprocesando datos...")
@@ -566,7 +770,7 @@ if __name__ == "__main__":
     if args.debug:
         try:
             print("\n- Guardando datos preprocesados...")
-            data.to_csv('output/data-processed.csv', index=False)
+            data.to_csv(f'output/{args.file}-processed.csv', index=False)
             print(Fore.GREEN+"Datos preprocesados guardados con éxito"+Fore.RESET)
         except Exception as e:
             print(Fore.RED+"Error al guardar los datos preprocesados"+Fore.RESET)
