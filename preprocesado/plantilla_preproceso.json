@@ -10,7 +10,7 @@
         "round_strategy": "",
         "text_process": "",
         "sampling": "",
-        "drop_features": []
+        "drop_features": [""]
     },
 
     "metric":{

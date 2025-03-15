@@ -2,7 +2,7 @@
     "preprocessing":{
         "target": "TARGET",
         "targ_categorial": "True",
-        "unique_category_threshold": "10",
+        "unique_category_threshold": "100",
         "missing_values": "impute",
         "impute_strategy": "mean",
         "scaling": "avgstd",
@@ -10,7 +10,7 @@
         "round_strategy": "quantile",
         "text_process": "tf-idf",
         "sampling": "undersampling",
-        "drop_features": []
+        "drop_features": ["ID"]
     },
 
     "metrics":{
@@ -18,9 +18,16 @@
         "best_model":"f1_micro"
     },
 
+    "train":{
+    },
+
+    "test":{
+        "model_to_test": "SantanderTraHalfHalf-modelo-kNN"
+    },
+
     "kNN":{
         "k": "1",
-        "K": "10",
+        "K": "21",
         "p": "2"
     },
 

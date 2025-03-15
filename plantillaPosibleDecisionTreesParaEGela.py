@@ -542,7 +542,10 @@ def divide_data():
 
     x_dev, x_test, y_dev, y_test = train_test_split(x_dev, y_dev, test_size=0.5)
     #TODO: revisar
-    pd.DataFrame(x_test, columns=x.columns).to_csv(f"output/{args.file.split('/')[-1].split('.csv')[0]}-test.csv")
+    
+    x_test = pd.DataFrame(x_test, columns=x.columns)
+
+    x_test.to_csv(f"output/{args.file.split('/')[-1].split('.csv')[0]}-test.csv", index = False)
 
     return x_train, x_dev, y_train, y_dev
  
@@ -567,7 +570,7 @@ def save_model(gs):
     final_results.to_csv(f"output/{args.file.split('/')[-1].split('.csv')[0]}-informe.csv", index=False, float_format="%.3f")
 
     try:
-        with open(f"output/{args.file.split('/')[-1].split('.csv')[0]}-modelo.pkl", 'wb') as file:
+        with open(f"output/{args.file.split('/')[-1].split('.csv')[0]}-modelo-{args.algorithm}.pkl", 'wb') as file:
             pickle.dump(gs, file)
             print(Fore.CYAN+"Modelo guardado con éxito"+Fore.RESET)
 
@@ -614,10 +617,10 @@ def kNN():
     x_train, x_dev, y_train, y_dev = divide_data()
 
     hp = {
-        'n_neighbors': range(int(args.kNN["k"]), int(args.kNN["K"])),
+        'n_neighbors': range(int(args.kNN["k"]), int(args.kNN["K"])+1),
         'weights': ["uniform", "distance"],
         'metric': ["euclidean", "manhattan"],
-        'p': range(1, int(args.kNN["p"]+1))
+        'p': range(1, int(args.kNN["p"])+1)
         }
     
     # Hacemos un barrido de hiperparametros
@@ -658,7 +661,25 @@ def decision_tree():
     #with tqdm(total=100, desc='Procesando decision tree', unit='iter', leave=True) as pbar:
         #TODO Llamar al decision trees
         #gs = GridSearchCV(
-   
+
+    hp = {
+        'criterion': ['gini', 'entropy'],
+        'splitter': ['best', 'random'],
+        'max_depth': range(int(args.DT["min_depth"]), int(args.DT["max_depth"])+1),
+        'min_samples_leaf': range(args.DT["intervalo_sample_per_leaf"][0], args.DT["intervalo_sample_per_leaf"][-1]+1)
+        }
+
+    with tqdm(total=100, desc='Procesando DT', unit='iter', leave=True) as pbar:
+        gs = GridSearchCV(DecisionTreeClassifier(), hp, cv=5, n_jobs=args.cpu, scoring=args.metrics["evaluation"], refit=args.metrics["best_model"])
+        start_time = time.time()
+        gs.fit(x_train, y_train)
+        end_time = time.time()
+        for i in range(100):
+            time.sleep(random.uniform(0.06, 0.15))  # Esperamos un tiempo aleatorio
+            pbar.update(random.random()*2)  # Actualizamos la barra con un valor aleatorio
+        pbar.n = 100
+        pbar.last_print_n = 100
+        pbar.update(0)
     execution_time = end_time - start_time
     print("Tiempo de ejecución:"+Fore.MAGENTA, execution_time,Fore.RESET+ "segundos")
     
@@ -710,7 +731,7 @@ def load_model():
         Exception: Si ocurre un error al cargar el modelo.
     """
     try:
-        with open(args.test[f"output/{args.test['model_to_test']}"], 'rb') as file:
+        with open(f"output/{args.test['model_to_test']}.pkl", 'rb') as file:
             model = pickle.load(file)
             print(Fore.GREEN+"Modelo cargado con éxito"+Fore.RESET)
             return model
