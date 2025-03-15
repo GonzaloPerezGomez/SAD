@@ -10,12 +10,20 @@
         "round_strategy": "",
         "text_process": "",
         "sampling": "",
-        "drop_features": []
+        "drop_features": [""]
     },
 
     "metric":{
         "evaluation": [],
         "best_model":""
+    },
+
+    "train":{
+        "output_model": ""
+    },
+
+    "test":{
+        "model_to_test": ""
     },
 
     "kNN":{

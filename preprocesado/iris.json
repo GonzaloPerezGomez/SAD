@@ -18,16 +18,23 @@
         "best_model":"f1_micro"
     },
 
+    "train":{
+    },
+
+    "test":{
+        "model_to_test": "iris-modelo-kNN"
+    },
+
     "kNN":{
-        "k": "1",
-        "K": "10",
+        "k": "25",
+        "K": "49",
         "p": "2"
     },
 
     "DT":{
         "min_depth": "",
         "max_depth": "",
-        "intervalo_sample_per_leaf": ["", ""]
+        "intervalo_sample_per_leaf": []
     },
 
     "RF":{
