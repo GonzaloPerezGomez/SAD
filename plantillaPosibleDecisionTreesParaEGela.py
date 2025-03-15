@@ -55,7 +55,7 @@ def parse_args():
     parse.add_argument("-m", "--mode", help="Modo de ejecución (train o test)", required=True)
     parse.add_argument("-f", "--file", help="Fichero csv (/Path_to_file)", required=True)
     parse.add_argument("-p", "--preprocess", help="Fichero json (/Path_to_file)", required=True)
-    parse.add_argument("-a", "--algorithm", help="Algoritmo a ejecutar (kNN, decision_tree o random_forest)", required=True)
+    parse.add_argument("-a", "--algorithm", help="Algoritmo a ejecutar (kNN, DT o RF)", required=True)
     parse.add_argument("-c", "--cpu", help="Número de CPUs a utilizar [-1 para usar todos]", required=False, default=-1, type=int)
     parse.add_argument("-v", "--verbose", help="Muestra las metricas por la terminal", required=False, default=False, action="store_true")
     parse.add_argument("--debug", help="Modo debug [Muestra informacion extra del preprocesado y almacena el resultado del mismo en un .csv]", required=False, default=False, action="store_true")
@@ -507,8 +507,6 @@ def preprocesar_datos():
     elif args.algorithm == 'DT':
         pass
     elif args.algorithm == 'RF':
-        pass 
-    elif args.algorithm == 'NB':
         pass
 
     if args.mode == "train":
@@ -542,6 +540,10 @@ def divide_data():
     np.random.seed(42)  # Set a random seed for reproducibility
     x_train, x_dev, y_train, y_dev = train_test_split(x.values, y.values, test_size=0.3)
 
+    x_dev, x_test, y_dev, y_test = train_test_split(x_dev, y_dev, test_size=0.5)
+    #TODO: revisar
+    pd.DataFrame(x_test, columns=x.columns).to_csv(f"output/{args.file.split('/')[-1].split('.csv')[0]}-test.csv")
+
     return x_train, x_dev, y_train, y_dev
  
  
@@ -560,12 +562,12 @@ def save_model(gs):
     results = gs.cv_results_
     df_results = pd.DataFrame(results)
     hp = [col for col in df_results.columns if col.startswith('param_')]
-    scores = [f'mean_test_{metric}' for metric in args.metrics["evaluation"]]
+    scores = [f'mean_test_{metric}' for metric in args.metrics['evaluation']]
     final_results = df_results[hp + scores].copy()
-    final_results.to_csv("output/informe.csv", index=False)
+    final_results.to_csv(f"output/{args.file.split('/')[-1].split('.csv')[0]}-informe.csv", index=False, float_format="%.3f")
 
     try:
-        with open('output/modelo.pkl', 'wb') as file:
+        with open(f"output/{args.file.split('/')[-1].split('.csv')[0]}-modelo.pkl", 'wb') as file:
             pickle.dump(gs, file)
             print(Fore.CYAN+"Modelo guardado con éxito"+Fore.RESET)
 
@@ -615,7 +617,7 @@ def kNN():
         'n_neighbors': range(int(args.kNN["k"]), int(args.kNN["K"])),
         'weights': ["uniform", "distance"],
         'metric': ["euclidean", "manhattan"],
-        'p': range(1, int(args.kNN["p"]))
+        'p': range(1, int(args.kNN["p"]+1))
         }
     
     # Hacemos un barrido de hiperparametros
@@ -708,7 +710,7 @@ def load_model():
         Exception: Si ocurre un error al cargar el modelo.
     """
     try:
-        with open('output/modelo.pkl', 'rb') as file:
+        with open(args.test[f"output/{args.test['model_to_test']}"], 'rb') as file:
             model = pickle.load(file)
             print(Fore.GREEN+"Modelo cargado con éxito"+Fore.RESET)
             return model

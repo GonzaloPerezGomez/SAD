@@ -18,6 +18,14 @@
         "best_model":""
     },
 
+    "train":{
+        "output_model": ""
+    },
+
+    "test":{
+        "model_to_test": ""
+    },
+
     "kNN":{
         "k": "",
         "K": "",

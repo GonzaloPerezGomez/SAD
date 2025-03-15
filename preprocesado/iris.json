@@ -18,6 +18,14 @@
         "best_model":"f1_micro"
     },
 
+    "train":{
+        "output_model": "iris-14/03/2025"
+    },
+
+    "test":{
+        "model_to_test": "iris-14/03/2025"
+    },
+
     "kNN":{
         "k": "1",
         "K": "10",
