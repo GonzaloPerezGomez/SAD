@@ -19,7 +19,9 @@
     },
 
     "train":{
-        "output_model": ""
+        "output_model": "",
+        "train_size": "Valor sobre toda la muestra 'Por ejemplo 0,7'",
+        "test_size": "Valor sobre el resultado de la anterior división 'De normal 0.5'"
     },
 
     "test":{
@@ -29,7 +31,7 @@
     "kNN":{
         "k": "",
         "K": "",
-        "p": ""
+        "p": []
     },
 
     "DT":{

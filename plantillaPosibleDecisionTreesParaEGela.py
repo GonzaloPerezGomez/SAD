@@ -538,9 +538,9 @@ def divide_data():
     # Dividimos los datos en entrenamiento y test
     from sklearn.model_selection import train_test_split
     np.random.seed(42)  # Set a random seed for reproducibility
-    x_train, x_dev, y_train, y_dev = train_test_split(x.values, y.values, test_size=0.3)
+    x_train, x_dev, y_train, y_dev = train_test_split(x.values, y.values, test_size= 1 - int(args.train["train_size"]), stratify="array-like")
 
-    x_dev, x_test, y_dev, y_test = train_test_split(x_dev, y_dev, test_size=0.5)
+    x_dev, x_test, y_dev, y_test = train_test_split(x_dev, y_dev, test_size=int(args.train["test_size"]), stratify="array-like")
     #TODO: revisar
     
     x_test = pd.DataFrame(x_test, columns=x.columns)
@@ -619,8 +619,7 @@ def kNN():
     hp = {
         'n_neighbors': range(int(args.kNN["k"]), int(args.kNN["K"])+1),
         'weights': ["uniform", "distance"],
-        'metric': ["euclidean", "manhattan"],
-        'p': range(1, int(args.kNN["p"])+1)
+        'p': args.kNN["p"]
         }
     
     # Hacemos un barrido de hiperparametros
