@@ -18,7 +18,10 @@
         "best_model":"f1_micro"
     },
 
-    "train":{
+   "train":{
+        "output_model": "",
+        "train_size": 0.7,
+        "test_size": 0.5
     },
 
     "test":{
@@ -28,16 +31,22 @@
     "kNN":{
         "k": "1",
         "K": "21",
-        "p": "2"
+        "p": [2,2]
     },
 
     "DT":{
-        "min_depth": "",
-        "max_depth": "",
-        "intervalo_sample_per_leaf": ["", ""]
+        "min_depth": "5",
+        "max_depth": "7",
+        "intervalo_sample_per_leaf": [10, 18]
     },
 
     "RF":{
+       
+        "min_depth": "5",
+        "max_depth": "7",
+        "intervalo_sample_per_leaf": [10, 18] ,
+        "n_estimators_min": "4",
+        "n_estimators_max": "6"
 
     },
 

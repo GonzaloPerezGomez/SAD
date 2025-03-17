@@ -41,7 +41,13 @@
     },
 
     "RF":{
-
+       
+        "min_depth": "",
+        "max_depth": "",
+        "intervalo_sample_per_leaf": ["", ""],
+        "n_estimators_min": "",
+        "n_estimators_max": "",
+        "max_features": ["", "none"]
     },
 
     "NB":{
