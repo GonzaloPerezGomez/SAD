@@ -1,0 +1,53 @@
+{
+    "preprocessing":{
+        "target": "Especie",
+        "targ_categorial": "True",
+        "unique_category_threshold": "100",
+        "missing_values": "drop",
+        "impute_strategy": "",
+        "scaling": "avgstd",
+        "outliers": "round",
+        "round_strategy": "quantile",
+        "text_process": "tf-idf",
+        "sampling": "oversampling",
+        "drop_features": [""],
+        "porcentaje":0.3
+    },
+
+    "metrics":{
+        "evaluation": ["f1_micro","accuracy","precision_micro","recall_micro"],
+        "best_model":"f1_micro",
+        "num_modelos": 1
+    },
+
+    "train":{
+        "output_model": "",
+        "train_size": 0.7,
+        "test_size": 0.5
+    },
+
+    "test":{
+        "model_to_test": "irisDesbalanceado-modelo-kNN-top1"
+    },
+
+    "kNN":{
+        "k": "1",
+        "K": "21",
+        "p": [2,2]
+    },
+
+    "DT":{
+        "min_depth": "10",
+        "max_depth": "20",
+        "intervalo_sample_per_leaf": ["4", "7"]
+    },
+
+    "RF":{
+       
+        "min_depth": "",
+        "max_depth": "",
+        "intervalo_sample_per_leaf": ["", ""],
+        "n_estimators_min": "",
+        "n_estimators_max": "",
+        "max_features": ["", "none"]
+    }}

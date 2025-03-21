@@ -37,7 +37,11 @@ from imblearn.over_sampling import RandomOverSampler
 from imblearn.over_sampling import SMOTE
 from tqdm import tqdm
 
-# Funciones auxiliares
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+# Obtencion de los materiales(ficheros, datos...)
 
 def signal_handler(sig, frame):
     """
@@ -62,12 +66,12 @@ def parse_args():
     parse.add_argument("--debug", help="Modo debug [Muestra informacion extra del preprocesado y almacena el resultado del mismo en un .csv]", required=False, default=False, action="store_true")
     # Parseamos los argumentos
     args = parse.parse_args()
-    
+
     # Leemos los parametros del JSON
     with open(args.preprocess) as json_file:
         config = json.load(json_file)
     
-    # Juntamos todo en una variable
+        # Juntamos todo en una variable
     for key, value in config.items():
         setattr(args, key, value)
     
@@ -88,6 +92,10 @@ def load_data(file):
         print(Fore.RED+"Error al cargar los datos"+Fore.RESET)
         print(e)
         sys.exit(1)
+
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------
+
 
 # Funciones para calcular métricas
 
@@ -118,8 +126,6 @@ def calculate_confusion_matrix(y_test, y_pred):
     return cm
 
 
-#mirar interior(info de average)
-
 #calcula la precision y el recall
 def calculate_prec_rec(y_test, y_pred):
     """
@@ -135,20 +141,14 @@ def calculate_prec_rec(y_test, y_pred):
     return precision_score(y_test, y_pred, average="weighted"), recall_score(y_test, y_pred, average="weighted")
 
 
-
-
-#def calculate_classification_report(y_dev, x_dev):
- #   from sklearn.metrics import classification_report
-  #  return classification_report(y_dev, x_dev)
-
-
-
 #-----------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-# Funciones para preprocesar los datos
+# Funcion auxiliar
+
 
 def select_features():
+
     """
     Separa las características del conjunto de datos en características numéricas, de texto y categóricas.
 
@@ -180,6 +180,55 @@ def select_features():
         print(Fore.RED+"Error al separar los datos"+Fore.RESET)
         print(e)
         sys.exit(1)
+
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+# Funciones para preprocesar los datos
+
+
+def preprocesar_datos():
+    """
+    Función para preprocesar los datos
+        1. Separamos los datos por tipos (Categoriales, numéricos y textos)
+        2. Pasar los datos de categoriales a numéricos 
+        3. Tratamos missing values (Eliminar y imputar)
+        4. Reescalamos los datos datos (MinMax, Normalizer, MaxAbsScaler)
+        TODO 5. Simplificamos el texto (Normalizar, eliminar stopwords, stemming y ordenar alfabéticamente)
+        6. Tratamos el texto (TF-IDF, BOW)
+        7. Realizamos Oversampling o Undersampling
+        8. Borrar columnas no necesarias
+    :param data: Datos a preprocesar
+    :return: Datos preprocesados y divididos en train y test
+    """
+        # Separamos los datos por tipos
+    numerical_feature, text_feature, categorical_feature = select_features()
+
+        # Simplificamos el texto
+    simplify_text(text_feature)
+
+        # Tratamos el texto
+    process_text(text_feature)
+
+        # Pasar los datos a categoriales a numéricos
+    cat2num(categorical_feature)
+
+        #Outliers
+    outliers(numerical_feature)
+
+        # Tratamos missing values
+    process_missing_values(numerical_feature, categorical_feature)
+
+        # Reescalamos los datos numéricos
+    reescaler(numerical_feature)
+
+        # Realizamos Oversampling o Undersampling
+    over_under_sampling()
+
+    #drop_features()
+
+#-----------------------------------------------------------------------------
 
 def process_missing_values(numerical_feature, categorical_feature):
     """
@@ -388,17 +437,18 @@ def over_under_sampling():
     global data
 
     columna_objetivo = args.preprocessing["target"]
-    porcentaje = args.preprocessing["porcentaje"]
+    porcentaje = float(args.preprocessing["porcentaje"])
+
     atrib = data.drop(columns= [columna_objetivo])
     targ = data[columna_objetivo]
 
 
     if args.preprocessing["sampling"]== "undersampling":
-        sampler = RandomUnderSampler(random_state=42, sampling_strategy=porcentaje)
+        sampler = RandomUnderSampler(random_state=42, str=porcentaje)
     elif args.preprocessing["sampling"]== "oversampling": #copia los datos de la clase minoritaria
-        sampler = RandomOverSampler(random_state=42, sampling_strategy=porcentaje)
+        sampler = RandomOverSampler(random_state=42)
     elif args.preprocessing["sampling"]== "smote": #crea datos sinteticos de la clase minoritaria
-        sampler = SMOTE(random_state=42, sampling_strategy=porcentaje)
+        sampler = SMOTE(random_state=42, sampling_strategy=porcentaje,  str=porcentaje)
 
     variable_balanceado, targ_balanceado = sampler.fit_resample(atrib, targ)
     variable_balanceado_df = pd.DataFrame(variable_balanceado, columns=atrib.columns)
@@ -471,50 +521,6 @@ def outliers(numerical_feature):
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 
 
-def preprocesar_datos():
-    """
-    Función para preprocesar los datos
-        1. Separamos los datos por tipos (Categoriales, numéricos y textos)
-        2. Pasar los datos de categoriales a numéricos 
-        3. Tratamos missing values (Eliminar y imputar)
-        4. Reescalamos los datos datos (MinMax, Normalizer, MaxAbsScaler)
-        TODO 5. Simplificamos el texto (Normalizar, eliminar stopwords, stemming y ordenar alfabéticamente)
-        6. Tratamos el texto (TF-IDF, BOW)
-        7. Realizamos Oversampling o Undersampling
-        8. Borrar columnas no necesarias
-    :param data: Datos a preprocesar
-    :return: Datos preprocesados y divididos en train y test
-    """
-        # Separamos los datos por tipos
-    numerical_feature, text_feature, categorical_feature = select_features()
-
-        # Simplificamos el texto
-    #simplify_text(text_feature)
-
-        # Tratamos el texto
-    #process_text(text_feature)
-
-        # Pasar los datos a categoriales a numéricos
-    #cat2num(categorical_feature)
-
-        #Outliers
-    outliers(numerical_feature)
-
-        # Tratamos missing values
-    process_missing_values(numerical_feature, categorical_feature)
-
-        # Reescalamos los datos numéricos
-    #reescaler(numerical_feature)
-
-        # Realizamos Oversampling o Undersampling
-    over_under_sampling()
-
-    #drop_features()
-
-
-#------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-
 # Funciones para entrenar un modelo
 
 def divide_data():
@@ -551,7 +557,7 @@ def divide_data():
     return x_train, x_dev, y_train, y_dev
  
  
-def save_model(gs):
+def save_model(gs, x_train, y_train):
     """
     Guarda el modelo y los resultados de la búsqueda de hiperparámetros en archivos.
 
@@ -567,13 +573,23 @@ def save_model(gs):
     df_results = pd.DataFrame(results)
     hp = [col for col in df_results.columns if col.startswith('param_')]
     scores = [f'mean_test_{metric}' for metric in args.metrics['evaluation']]
-    final_results = df_results[hp + scores].copy()
+    df_results['Parámetros'] = df_results[hp].apply(lambda row: str(row.to_dict()), axis=1)
+    final_results = df_results[['Parámetros'] + scores].copy()
     final_results.to_csv(f"output/{args.file.split('/')[-1].split('.csv')[0]}-informe.csv", index=False, float_format="%.3f")
-
+    best_model_metric = args.metrics['best_model']
+    num = int(args.metrics['num_modelos'])
+    best_models_indices = df_results.sort_values(by=f'mean_test_{best_model_metric}', ascending=False).head(num).index
+    
     try:
-        with open(f"output/{args.file.split('/')[-1].split('.csv')[0]}-modelo-{args.algorithm}.pkl", 'wb') as file:
-            pickle.dump(gs, file)
-            print(Fore.CYAN+"Modelo guardado con éxito"+Fore.RESET)
+        for i, idx in enumerate(best_models_indices):
+            best_model_params = gs.cv_results_['params'][idx]
+            model = KNeighborsClassifier(**best_model_params) 
+            model.fit(x_train, y_train)
+            
+            model_filename = f"output/{args.file.split('/')[-1].split('.csv')[0]}-modelo-{args.algorithm}-top{i+1}.pkl"
+            with open(model_filename, 'wb') as file:
+                pickle.dump(model, file)
+                print(Fore.CYAN+"Modelo guardado con éxito"+Fore.RESET)
 
     except Exception as e:
         print(Fore.RED+"Error al guardar el modelo"+Fore.RESET)
@@ -601,8 +617,14 @@ def mostrar_resultados(gs, x_dev, y_dev):
         print(Fore.MAGENTA+"> Mejor puntuacion:\n"+Fore.RESET, gs.best_score_)
         print(Fore.MAGENTA+"> F1-score micro:\n"+Fore.RESET, calculate_fscore(y_dev, gs.predict(x_dev))[0])
         print(Fore.MAGENTA+"> F1-score macro:\n"+Fore.RESET, calculate_fscore(y_dev, gs.predict(x_dev))[1])
-        print(Fore.MAGENTA+"> Informe de clasificación:\n"+Fore.RESET, calculate_classification_report(y_dev, gs.predict(x_dev)))
         print(Fore.MAGENTA+"> Matriz de confusión:\n"+Fore.RESET, calculate_confusion_matrix(y_dev, gs.predict(x_dev)))
+
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+#Entrenamiento de los 3 algoritmos
+
 
 def kNN():
     """
@@ -643,7 +665,7 @@ def kNN():
     mostrar_resultados(gs, x_dev, y_dev)
     
     # Guardamos el modelo utilizando pickle
-    save_model(gs)
+    save_model(gs, x_train, y_train)
 
 def decision_tree():
     """
@@ -730,6 +752,11 @@ def random_forest():
     # Guardamos el modelo utilizando pickle
     save_model(gs)
 
+
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
 # Funciones para predecir con un modelo
 
 def load_model():
@@ -764,11 +791,26 @@ def predict():
     """
     global data
     # Predecimos
-    prediction = model.predict(data.values)
+    atributos = data.drop(columns=args.preprocessing["target"])
+    prediction = model.predict(atributos.values)
     
     # Añadimos la prediccion al dataframe data
     data = pd.concat([data, pd.DataFrame(prediction, columns=["prediccion"])], axis=1)
+
     
+    precission , recall = calculate_prec_rec(data[args.preprocessing["target"]], data["prediccion"])
+    f_score = calculate_fscore(data[args.preprocessing["target"]], data["prediccion"])
+    with open(f"output/{args.file.split('/')[-1].split('-')[0]}-informeDelTest.csv", 'w', newline='') as file:
+        writer = csv.writer(file, delimiter=',')
+        writer.writerow(["precission", "recall", "f_score"])
+        writer.writerow([precission, recall, f_score])
+
+  #-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
 # Función principal
 
 if __name__ == "__main__":
@@ -806,8 +848,10 @@ if __name__ == "__main__":
     nltk.download('wordnet')
 
     # Preprocesamos los datos
-    print("\n- Preprocesando datos...")
-    preprocesar_datos()
+    if args.mode =="train":
+        print("\n- Preprocesando datos...")
+        preprocesar_datos()
+
     if args.debug:
         try:
             print("\n- Guardando datos preprocesados...")
@@ -858,6 +902,7 @@ if __name__ == "__main__":
             print(Fore.GREEN+"Predicción realizada con éxito"+Fore.RESET)
             # Guardamos el dataframe con la prediccion
             data.to_csv(f'output/{args.file.split("/")[-1].split(".csv")[0]}-prediction.csv', index=False)
+
             print(Fore.GREEN+"Predicción guardada con éxito"+Fore.RESET)
             sys.exit(0)
         except Exception as e:

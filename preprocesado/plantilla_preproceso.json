@@ -10,12 +10,14 @@
         "round_strategy": "",
         "text_process": "",
         "sampling": "",
-        "drop_features": [""]
+        "drop_features": [""],
+        "porcentaje": ""
     },
 
     "metric":{
         "evaluation": [],
-        "best_model":""
+        "best_model":"",
+        "num_modelos": ""
     },
 
     "train":{
@@ -50,9 +52,6 @@
         "max_features": ["", "none"]
     },
 
-    "NB":{
-
-    },
 
 
 

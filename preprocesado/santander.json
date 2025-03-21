@@ -10,12 +10,14 @@
         "round_strategy": "quantile",
         "text_process": "tf-idf",
         "sampling": "undersampling",
-        "drop_features": ["ID"]
+        "drop_features": ["ID"],
+        "porcentaje":0.2
     },
 
     "metrics":{
         "evaluation": ["f1_micro","accuracy", "precision", "recall"],
-        "best_model":"f1_micro"
+        "best_model":"f1_micro",
+        "num_modelos": 2
     },
 
    "train":{
@@ -25,7 +27,7 @@
     },
 
     "test":{
-        "model_to_test": "SantanderTraHalfHalf-modelo-kNN"
+        "model_to_test": "SantanderTraHalfHalf-modelo-kNN-top1"
     },
 
     "kNN":{
