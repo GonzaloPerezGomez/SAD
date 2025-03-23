@@ -27,7 +27,7 @@
     },
 
     "test":{
-        "model_to_test": "irisDesbalanceado-modelo-kNN-top1"
+        "model_to_test": "irisDesbalanceado-modelo-decision_tree-top1"
     },
 
     "kNN":{
@@ -37,9 +37,9 @@
     },
 
     "DT":{
-        "min_depth": "10",
-        "max_depth": "20",
-        "intervalo_sample_per_leaf": ["4", "7"]
+        "min_depth": 10,
+        "max_depth": 20,
+        "intervalo_sample_per_leaf": [4, 7]
     },
 
     "RF":{

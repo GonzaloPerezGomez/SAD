@@ -11,7 +11,7 @@
         "text_process": "tf-idf",
         "sampling": "undersampling",
         "drop_features": ["ID"],
-        "porcentaje":0.2
+        "porcentaje": 0.2
     },
 
     "metrics":{

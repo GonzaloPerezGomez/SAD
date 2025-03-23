@@ -437,6 +437,7 @@ def over_under_sampling():
     global data
 
     columna_objetivo = args.preprocessing["target"]
+
     porcentaje = float(args.preprocessing["porcentaje"])
 
     atrib = data.drop(columns= [columna_objetivo])
@@ -444,11 +445,11 @@ def over_under_sampling():
 
 
     if args.preprocessing["sampling"]== "undersampling":
-        sampler = RandomUnderSampler(random_state=42, str=porcentaje)
+        sampler = RandomUnderSampler(random_state=42)#, sampling_strategy=porcentaje)
     elif args.preprocessing["sampling"]== "oversampling": #copia los datos de la clase minoritaria
-        sampler = RandomOverSampler(random_state=42)
+        sampler = RandomOverSampler(random_state=42)#, sampling_strategy=porcentaje)
     elif args.preprocessing["sampling"]== "smote": #crea datos sinteticos de la clase minoritaria
-        sampler = SMOTE(random_state=42, sampling_strategy=porcentaje,  str=porcentaje)
+        sampler = SMOTE(random_state=42)#, sampling_strategy=porcentaje)
 
     variable_balanceado, targ_balanceado = sampler.fit_resample(atrib, targ)
     variable_balanceado_df = pd.DataFrame(variable_balanceado, columns=atrib.columns)
@@ -583,7 +584,12 @@ def save_model(gs, x_train, y_train):
     try:
         for i, idx in enumerate(best_models_indices):
             best_model_params = gs.cv_results_['params'][idx]
-            model = KNeighborsClassifier(**best_model_params) 
+            if args.algorithm=="kNN":
+                model = KNeighborsClassifier(**best_model_params) 
+            elif args.algorithm == "decision_tree":  
+                model = DecisionTreeClassifier(**best_model_params)
+            elif args.algorithm == "random_forest":
+                model = RandomForestClassifier(**best_model_params) 
             model.fit(x_train, y_train)
             
             model_filename = f"output/{args.file.split('/')[-1].split('.csv')[0]}-modelo-{args.algorithm}-top{i+1}.pkl"
@@ -705,7 +711,7 @@ def decision_tree():
     mostrar_resultados(gs, x_dev, y_dev)
     
     # Guardamos el modelo utilizando pickle
-    save_model(gs)
+    save_model(gs, x_train,  y_train)
     
 def random_forest():
     """
@@ -750,7 +756,7 @@ def random_forest():
     mostrar_resultados(gs, x_dev, y_dev)
     
     # Guardamos el modelo utilizando pickle
-    save_model(gs)
+    save_model(gs, x_train,  y_train)
 
 
 
@@ -802,8 +808,8 @@ def predict():
     f_score = calculate_fscore(data[args.preprocessing["target"]], data["prediccion"])
     with open(f"output/{args.file.split('/')[-1].split('-')[0]}-informeDelTest.csv", 'w', newline='') as file:
         writer = csv.writer(file, delimiter=',')
-        writer.writerow(["precission", "recall", "f_score"])
-        writer.writerow([precission, recall, f_score])
+        writer.writerow(["Parametros","precission", "recall", "f_score"])
+        writer.writerow([model.get_params() , precission, recall, f_score])
 
   #-----------------------------------------------------------------------------------------------------------------------------------------------------
 
