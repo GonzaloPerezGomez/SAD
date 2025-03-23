@@ -34,9 +34,14 @@ from nltk.tokenize import word_tokenize
 # Imblearn
 from imblearn.under_sampling import RandomUnderSampler
 from imblearn.over_sampling import RandomOverSampler
+from imblearn.over_sampling import SMOTE
 from tqdm import tqdm
 
-# Funciones auxiliares
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+# Obtencion de los materiales(ficheros, datos...)
 
 def signal_handler(sig, frame):
     """
@@ -61,12 +66,12 @@ def parse_args():
     parse.add_argument("--debug", help="Modo debug [Muestra informacion extra del preprocesado y almacena el resultado del mismo en un .csv]", required=False, default=False, action="store_true")
     # Parseamos los argumentos
     args = parse.parse_args()
-    
+
     # Leemos los parametros del JSON
     with open(args.preprocess) as json_file:
         config = json.load(json_file)
     
-    # Juntamos todo en una variable
+        # Juntamos todo en una variable
     for key, value in config.items():
         setattr(args, key, value)
     
@@ -88,6 +93,10 @@ def load_data(file):
         print(e)
         sys.exit(1)
 
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
 # Funciones para calcular métricas
 
 #realiza el calculo del fscore(equlibrio entre la precision y el recall)/ micro() y macro()
@@ -104,8 +113,6 @@ def calculate_fscore(y_test, y_pred):
     return fscore_micro, fscore_macro
 
 
-#------------------------------------------------------------------------------------------------------------------------------#
-
 #calcula la matriz de confusion comparando tanto los datos de test como los datos de la prediccion 
 def calculate_confusion_matrix(y_test, y_pred):
     """
@@ -118,10 +125,6 @@ def calculate_confusion_matrix(y_test, y_pred):
     cm = confusion_matrix(y_test, y_pred)
     return cm
 
-
-#------------------------------------------------------------------------------------------------------------------------------#
-
-#mirar interior(info de average)
 
 #calcula la precision y el recall
 def calculate_prec_rec(y_test, y_pred):
@@ -138,9 +141,14 @@ def calculate_prec_rec(y_test, y_pred):
     return precision_score(y_test, y_pred, average="weighted"), recall_score(y_test, y_pred, average="weighted")
 
 
-# Funciones para preprocesar los datos
+#-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+# Funcion auxiliar
+
 
 def select_features():
+
     """
     Separa las características del conjunto de datos en características numéricas, de texto y categóricas.
 
@@ -172,6 +180,55 @@ def select_features():
         print(Fore.RED+"Error al separar los datos"+Fore.RESET)
         print(e)
         sys.exit(1)
+
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+# Funciones para preprocesar los datos
+
+
+def preprocesar_datos():
+    """
+    Función para preprocesar los datos
+        1. Separamos los datos por tipos (Categoriales, numéricos y textos)
+        2. Pasar los datos de categoriales a numéricos 
+        3. Tratamos missing values (Eliminar y imputar)
+        4. Reescalamos los datos datos (MinMax, Normalizer, MaxAbsScaler)
+        TODO 5. Simplificamos el texto (Normalizar, eliminar stopwords, stemming y ordenar alfabéticamente)
+        6. Tratamos el texto (TF-IDF, BOW)
+        7. Realizamos Oversampling o Undersampling
+        8. Borrar columnas no necesarias
+    :param data: Datos a preprocesar
+    :return: Datos preprocesados y divididos en train y test
+    """
+        # Separamos los datos por tipos
+    numerical_feature, text_feature, categorical_feature = select_features()
+
+        # Simplificamos el texto
+    simplify_text(text_feature)
+
+        # Tratamos el texto
+    process_text(text_feature)
+
+        # Pasar los datos a categoriales a numéricos
+    cat2num(categorical_feature)
+
+        #Outliers
+    outliers(numerical_feature)
+
+        # Tratamos missing values
+    process_missing_values(numerical_feature, categorical_feature)
+
+        # Reescalamos los datos numéricos
+    reescaler(numerical_feature)
+
+        # Realizamos Oversampling o Undersampling
+    over_under_sampling()
+
+    #drop_features()
+
+#-----------------------------------------------------------------------------
 
 def process_missing_values(numerical_feature, categorical_feature):
     """
@@ -218,8 +275,6 @@ def process_missing_values(numerical_feature, categorical_feature):
     except Exception as e:
         print(Fore.RED+"Error al tratar missing values"+Fore.RESET)
         print(e)
-
-#TODO aqui lo que hayais hecho
 
 def reescaler(numerical_feature):
     """
@@ -277,8 +332,6 @@ def reescaler(numerical_feature):
         print(Fore.RED+"Error al realizar el reescalado"+Fore.RESET)
         print(e)
 
-#TODO aqui reescalar
-
 def cat2num(categorical_feature):
     """
     Convierte las características categóricas en características numéricas utilizando la codificación de etiquetas.
@@ -306,8 +359,6 @@ def cat2num(categorical_feature):
     except Exception as e:
         print(Fore.RED+"Error al numerizar las columnas categoriales"+Fore.RESET)
         print(e)
-
-#TODO aqui lo que haga falta para pasar de categorial a numerico
 
 def simplify_text(text_feature):
     """
@@ -386,17 +437,19 @@ def over_under_sampling():
     global data
 
     columna_objetivo = args.preprocessing["target"]
+
+    porcentaje = float(args.preprocessing["porcentaje"])
+
     atrib = data.drop(columns= [columna_objetivo])
     targ = data[columna_objetivo]
-    #TODO: no se como hacer lo del rebalanceo en base a unos parametros puedo en base a dos 20-80 o asi  
-
-    
 
 
     if args.preprocessing["sampling"]== "undersampling":
-        sampler = RandomUnderSampler(random_state=42)
-    elif args.preprocessing["sampling"]== "oversampling":
-        sampler = RandomOverSampler(random_state=42)
+        sampler = RandomUnderSampler(random_state=42)#, sampling_strategy=porcentaje)
+    elif args.preprocessing["sampling"]== "oversampling": #copia los datos de la clase minoritaria
+        sampler = RandomOverSampler(random_state=42)#, sampling_strategy=porcentaje)
+    elif args.preprocessing["sampling"]== "smote": #crea datos sinteticos de la clase minoritaria
+        sampler = SMOTE(random_state=42)#, sampling_strategy=porcentaje)
 
     variable_balanceado, targ_balanceado = sampler.fit_resample(atrib, targ)
     variable_balanceado_df = pd.DataFrame(variable_balanceado, columns=atrib.columns)
@@ -405,7 +458,6 @@ def over_under_sampling():
 
     data = datos_balanceados
   
-
 def drop_features():
     """
     Elimina las columnas especificadas del conjunto de datos.
@@ -422,7 +474,6 @@ def drop_features():
         print(Fore.RED+"Error al eliminar columnas"+Fore.RESET)
         print(e)
         sys.exit(1)
-
 
 def outliers(numerical_feature):
 
@@ -467,53 +518,9 @@ def outliers(numerical_feature):
         print(Fore.RED+"Error al tratar outliers"+Fore.RESET)
         print(e)
 
-def preprocesar_datos():
-    """
-    Función para preprocesar los datos
-        1. Separamos los datos por tipos (Categoriales, numéricos y textos)
-        2. Pasar los datos de categoriales a numéricos 
-        3. Tratamos missing values (Eliminar y imputar)
-        4. Reescalamos los datos datos (MinMax, Normalizer, MaxAbsScaler)
-        TODO 5. Simplificamos el texto (Normalizar, eliminar stopwords, stemming y ordenar alfabéticamente)
-        6. Tratamos el texto (TF-IDF, BOW)
-        7. Realizamos Oversampling o Undersampling
-        8. Borrar columnas no necesarias
-    :param data: Datos a preprocesar
-    :return: Datos preprocesados y divididos en train y test
-    """
-    # Separamos los datos por tipos
-    numerical_feature, text_feature, categorical_feature = select_features()
 
-    if args.algorithm == 'kNN':
+#----------------------------------------------------------------------------------------------------------------------------------------------------
 
-        # Simplificamos el texto
-        simplify_text(text_feature)
-
-        # Tratamos el texto
-        process_text(text_feature)
-
-        # Pasar los datos a categoriales a numéricos
-        cat2num(categorical_feature)
-
-        #Outliers
-        outliers(numerical_feature)
-
-        # Tratamos missing values
-        process_missing_values(numerical_feature, categorical_feature)
-
-        # Reescalamos los datos numéricos
-        reescaler(numerical_feature)
-
-    elif args.algorithm == 'DT':
-        pass
-    elif args.algorithm == 'RF':
-        pass
-
-    if args.mode == "train":
-        # Realizamos Oversampling o Undersampling
-        over_under_sampling()
-
-        drop_features()
 
 # Funciones para entrenar un modelo
 
@@ -538,19 +545,20 @@ def divide_data():
     # Dividimos los datos en entrenamiento y test
     from sklearn.model_selection import train_test_split
     np.random.seed(42)  # Set a random seed for reproducibility
-    x_train, x_dev, y_train, y_dev = train_test_split(x.values, y.values, test_size= 1 - int(args.train["train_size"]), stratify="array-like")
+    x_train, x_dev, y_train, y_dev = train_test_split(x.values, y.values, test_size= 1 - float(args.train["train_size"]), stratify=y)
 
-    x_dev, x_test, y_dev, y_test = train_test_split(x_dev, y_dev, test_size=int(args.train["test_size"]), stratify="array-like")
-    #TODO: revisar
+    x_dev, x_test, y_dev, y_test = train_test_split(x_dev, y_dev, test_size=float(args.train["test_size"]), stratify=y_dev)
+    
     
     x_test = pd.DataFrame(x_test, columns=x.columns)
-
-    x_test.to_csv(f"output/{args.file.split('/')[-1].split('.csv')[0]}-test.csv", index = False)
+    y_test = pd.DataFrame(y_test, columns=[args.preprocessing["target"]])
+    datos_test = pd.concat([x_test, y_test], axis=1)
+    datos_test.to_csv(f"output/{args.file.split('/')[-1].split('.csv')[0]}-test.csv", index = False)
 
     return x_train, x_dev, y_train, y_dev
  
  
-def save_model(gs):
+def save_model(gs, x_train, y_train):
     """
     Guarda el modelo y los resultados de la búsqueda de hiperparámetros en archivos.
 
@@ -566,13 +574,28 @@ def save_model(gs):
     df_results = pd.DataFrame(results)
     hp = [col for col in df_results.columns if col.startswith('param_')]
     scores = [f'mean_test_{metric}' for metric in args.metrics['evaluation']]
-    final_results = df_results[hp + scores].copy()
+    df_results['Parámetros'] = df_results[hp].apply(lambda row: str(row.to_dict()), axis=1)
+    final_results = df_results[['Parámetros'] + scores].copy()
     final_results.to_csv(f"output/{args.file.split('/')[-1].split('.csv')[0]}-informe.csv", index=False, float_format="%.3f")
-
+    best_model_metric = args.metrics['best_model']
+    num = int(args.metrics['num_modelos'])
+    best_models_indices = df_results.sort_values(by=f'mean_test_{best_model_metric}', ascending=False).head(num).index
+    
     try:
-        with open(f"output/{args.file.split('/')[-1].split('.csv')[0]}-modelo-{args.algorithm}.pkl", 'wb') as file:
-            pickle.dump(gs, file)
-            print(Fore.CYAN+"Modelo guardado con éxito"+Fore.RESET)
+        for i, idx in enumerate(best_models_indices):
+            best_model_params = gs.cv_results_['params'][idx]
+            if args.algorithm=="kNN":
+                model = KNeighborsClassifier(**best_model_params) 
+            elif args.algorithm == "decision_tree":  
+                model = DecisionTreeClassifier(**best_model_params)
+            elif args.algorithm == "random_forest":
+                model = RandomForestClassifier(**best_model_params) 
+            model.fit(x_train, y_train)
+            
+            model_filename = f"output/{args.file.split('/')[-1].split('.csv')[0]}-modelo-{args.algorithm}-top{i+1}.pkl"
+            with open(model_filename, 'wb') as file:
+                pickle.dump(model, file)
+                print(Fore.CYAN+"Modelo guardado con éxito"+Fore.RESET)
 
     except Exception as e:
         print(Fore.RED+"Error al guardar el modelo"+Fore.RESET)
@@ -600,8 +623,14 @@ def mostrar_resultados(gs, x_dev, y_dev):
         print(Fore.MAGENTA+"> Mejor puntuacion:\n"+Fore.RESET, gs.best_score_)
         print(Fore.MAGENTA+"> F1-score micro:\n"+Fore.RESET, calculate_fscore(y_dev, gs.predict(x_dev))[0])
         print(Fore.MAGENTA+"> F1-score macro:\n"+Fore.RESET, calculate_fscore(y_dev, gs.predict(x_dev))[1])
-        print(Fore.MAGENTA+"> Informe de clasificación:\n"+Fore.RESET, calculate_classification_report(y_dev, gs.predict(x_dev)))
         print(Fore.MAGENTA+"> Matriz de confusión:\n"+Fore.RESET, calculate_confusion_matrix(y_dev, gs.predict(x_dev)))
+
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+#Entrenamiento de los 3 algoritmos
+
 
 def kNN():
     """
@@ -642,7 +671,7 @@ def kNN():
     mostrar_resultados(gs, x_dev, y_dev)
     
     # Guardamos el modelo utilizando pickle
-    save_model(gs)
+    save_model(gs, x_train, y_train)
 
 def decision_tree():
     """
@@ -657,10 +686,6 @@ def decision_tree():
     x_train, x_dev, y_train, y_dev = divide_data()
     
     # Hacemos un barrido de hiperparametros
-    #with tqdm(total=100, desc='Procesando decision tree', unit='iter', leave=True) as pbar:
-        #TODO Llamar al decision trees
-        #gs = GridSearchCV(
-
     hp = {
         'criterion': ['gini', 'entropy'],
         'splitter': ['best', 'random'],
@@ -686,7 +711,7 @@ def decision_tree():
     mostrar_resultados(gs, x_dev, y_dev)
     
     # Guardamos el modelo utilizando pickle
-    save_model(gs)
+    save_model(gs, x_train,  y_train)
     
 def random_forest():
     """
@@ -705,9 +730,25 @@ def random_forest():
     x_train, x_dev, y_train, y_dev = divide_data()
     
     # Hacemos un barrido de hiperparametros
-    #with tqdm(total=100, desc='Procesando random forest', unit='iter', leave=True) as pbar:
-        #TODO Llamar al decision trees
-        #gs = GridSearchCV(
+
+    hp = {
+        'criterion': ['gini', 'entropy'],
+        'max_depth': range(int(args.RF["min_depth"]), int(args.RF["max_depth"])+1),
+        'n_estimators': range(int(args.RF["n_estimators_min"]), int(args.RF["n_estimators_max"])+1),
+        'min_samples_leaf': range(args.RF["intervalo_sample_per_leaf"][0], args.RF["intervalo_sample_per_leaf"][-1]+1)
+        }
+
+    with tqdm(total=100, desc='Procesando DT', unit='iter', leave=True) as pbar:
+        gs = GridSearchCV(RandomForestClassifier(), hp, cv=5, n_jobs=args.cpu, scoring=args.metrics["evaluation"], refit=args.metrics["best_model"])
+        start_time = time.time()
+        gs.fit(x_train, y_train)
+        end_time = time.time()
+        for i in range(100):
+            time.sleep(random.uniform(0.06, 0.15))  # Esperamos un tiempo aleatorio
+            pbar.update(random.random()*2)  # Actualizamos la barra con un valor aleatorio
+        pbar.n = 100
+        pbar.last_print_n = 100
+        pbar.update(0)
     execution_time = end_time - start_time
     print("Tiempo de ejecución:"+Fore.MAGENTA, execution_time,Fore.RESET+ "segundos")
     
@@ -715,7 +756,12 @@ def random_forest():
     mostrar_resultados(gs, x_dev, y_dev)
     
     # Guardamos el modelo utilizando pickle
-    save_model(gs)
+    save_model(gs, x_train,  y_train)
+
+
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------
+
 
 # Funciones para predecir con un modelo
 
@@ -751,11 +797,26 @@ def predict():
     """
     global data
     # Predecimos
-    prediction = model.predict(data.values)
+    atributos = data.drop(columns=args.preprocessing["target"])
+    prediction = model.predict(atributos.values)
     
     # Añadimos la prediccion al dataframe data
-    data = pd.concat([data, pd.DataFrame(prediction, columns=[args.preprocessing["target"]])], axis=1)
+    data = pd.concat([data, pd.DataFrame(prediction, columns=["prediccion"])], axis=1)
+
     
+    precission , recall = calculate_prec_rec(data[args.preprocessing["target"]], data["prediccion"])
+    f_score = calculate_fscore(data[args.preprocessing["target"]], data["prediccion"])
+    with open(f"output/{args.file.split('/')[-1].split('-')[0]}-informeDelTest.csv", 'w', newline='') as file:
+        writer = csv.writer(file, delimiter=',')
+        writer.writerow(["Parametros","precission", "recall", "f_score"])
+        writer.writerow([model.get_params() , precission, recall, f_score])
+
+  #-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------
+
+
 # Función principal
 
 if __name__ == "__main__":
@@ -793,8 +854,10 @@ if __name__ == "__main__":
     nltk.download('wordnet')
 
     # Preprocesamos los datos
-    print("\n- Preprocesando datos...")
-    preprocesar_datos()
+    if args.mode =="train":
+        print("\n- Preprocesando datos...")
+        preprocesar_datos()
+
     if args.debug:
         try:
             print("\n- Guardando datos preprocesados...")
@@ -845,6 +908,7 @@ if __name__ == "__main__":
             print(Fore.GREEN+"Predicción realizada con éxito"+Fore.RESET)
             # Guardamos el dataframe con la prediccion
             data.to_csv(f'output/{args.file.split("/")[-1].split(".csv")[0]}-prediction.csv', index=False)
+
             print(Fore.GREEN+"Predicción guardada con éxito"+Fore.RESET)
             sys.exit(0)
         except Exception as e:

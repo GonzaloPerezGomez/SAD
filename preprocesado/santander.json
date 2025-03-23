@@ -10,34 +10,45 @@
         "round_strategy": "quantile",
         "text_process": "tf-idf",
         "sampling": "undersampling",
-        "drop_features": ["ID"]
+        "drop_features": ["ID"],
+        "porcentaje": 0.2
     },
 
     "metrics":{
         "evaluation": ["f1_micro","accuracy", "precision", "recall"],
-        "best_model":"f1_micro"
+        "best_model":"f1_micro",
+        "num_modelos": 2
     },
 
-    "train":{
+   "train":{
+        "output_model": "",
+        "train_size": 0.7,
+        "test_size": 0.5
     },
 
     "test":{
-        "model_to_test": "SantanderTraHalfHalf-modelo-kNN"
+        "model_to_test": "SantanderTraHalfHalf-modelo-kNN-top1"
     },
 
     "kNN":{
         "k": "1",
         "K": "21",
-        "p": "2"
+        "p": [2,2]
     },
 
     "DT":{
-        "min_depth": "",
-        "max_depth": "",
-        "intervalo_sample_per_leaf": ["", ""]
+        "min_depth": "5",
+        "max_depth": "7",
+        "intervalo_sample_per_leaf": [10, 18]
     },
 
     "RF":{
+       
+        "min_depth": "5",
+        "max_depth": "7",
+        "intervalo_sample_per_leaf": [10, 18] ,
+        "n_estimators_min": "4",
+        "n_estimators_max": "6"
 
     },
 

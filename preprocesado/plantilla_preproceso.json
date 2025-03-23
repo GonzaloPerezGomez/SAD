@@ -10,12 +10,14 @@
         "round_strategy": "",
         "text_process": "",
         "sampling": "",
-        "drop_features": [""]
+        "drop_features": [""],
+        "porcentaje": ""
     },
 
     "metric":{
         "evaluation": [],
-        "best_model":""
+        "best_model":"",
+        "num_modelos": ""
     },
 
     "train":{
@@ -41,12 +43,15 @@
     },
 
     "RF":{
-
+       
+        "min_depth": "",
+        "max_depth": "",
+        "intervalo_sample_per_leaf": ["", ""],
+        "n_estimators_min": "",
+        "n_estimators_max": "",
+        "max_features": ["", "none"]
     },
 
-    "NB":{
-
-    },
 
 
 
