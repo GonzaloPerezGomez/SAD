@@ -15,9 +15,9 @@
     },
 
     "metrics":{
-        "evaluation": ["f1_micro","accuracy","precision_micro","recall_micro"],
+        "evaluation": ["precision_micro", "recall_micro",  "f1_micro", "precision_macro", "recall_macro", "f1_macro", "f1_weighted", "precision_weighted", "recall_weighted"],
         "best_model":"f1_micro",
-        "num_modelos": 1
+        "num_modelos": 2
     },
 
     "train":{
@@ -27,7 +27,7 @@
     },
 
     "test":{
-        "model_to_test": "irisDesbalanceado-modelo-decision_tree-top1"
+        "model_to_test": "irisDesbalanceado-modelo-kNN-top1"
     },
 
     "kNN":{
