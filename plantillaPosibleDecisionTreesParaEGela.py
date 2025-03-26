@@ -628,6 +628,9 @@ def mostrar_resultados(gs, x, y):
         print(Fore.MAGENTA+"> Matriz de confusión:\n"+Fore.RESET, calculate_confusion_matrix(y, gs.predict(x)))
 
 
+
+
+
 #-----------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -806,12 +809,75 @@ def predict():
     data = pd.concat([data, pd.DataFrame(prediction, columns=["prediccion"])], axis=1)
 
     
-    precission , recall = calculate_prec_rec(data[args.preprocessing["target"]], data["prediccion"])
-    f_score = calculate_fscore(data[args.preprocessing["target"]], data["prediccion"])
-    with open(f"output/{args.file.split('/')[-1].split('-')[0]}-informeDelTest.csv", 'w', newline='') as file:
-        writer = csv.writer(file, delimiter=',')
-        writer.writerow(["Parametros","precission", "recall", "f_score"])
-        writer.writerow([model.get_params() , precission, recall, f_score])
+
+def generarInforme(y_real, y_pred):
+    from sklearn.metrics import accuracy_score
+    from sklearn.metrics import precision_score
+    from sklearn.metrics import recall_score
+    from sklearn.metrics import f1_score
+
+
+    #generamos el informe con los 
+
+    df = pd.DataFrame({"parametros": [str(model.get_params())]})
+
+    #dos clases
+    if "accuracy" in args.metrics["evaluation"]:
+        df["accuracy"] = accuracy_score(y_real, y_pred)
+
+    if "precision" in args.metrics["evaluation"]:
+        df["precision"] = precision_score(y_real, y_pred, average="binary")
+
+    if "recall" in args.metrics["evaluation"]:
+        df["recall"] = recall_score(y_real, y_pred, average="binary")
+
+    if "f1" in args.metrics["evaluation"]:
+        df["f1"] = f1_score(y_real, y_pred, average="binary")
+
+
+    if "specifitivity" in args.metrics["evaluation"]:
+        tn, fp, fn, tp = confusion_matrix(y_real, y_pred).ravel()
+        if tn + fp==0:
+            df["f-specifitivity"] = tn / (tn + fp)
+        else:
+            df["f-specifitivity"] = 0.0
+
+    if "precision_micro" in args.metrics["evaluation"]:
+        df["precision_micro"] = precision_score(y_real, y_pred, average="micro")
+    if "recall_micro" in args.metrics["evaluation"]:
+        df["recall_micro"] = recall_score(y_real, y_pred, average="micro")
+    if "f1_micro" in args.metrics["evaluation"]:
+        df["f1_micro"] = f1_score(y_real, y_pred, average="micro")
+
+    if "precision_macro" in args.metrics["evaluation"]:
+        df["precision_macro"] = precision_score(y_real, y_pred, average="macro")
+    if "recall_macro" in args.metrics["evaluation"]:
+        df["recall_macro"] = recall_score(y_real, y_pred, average="macro")
+    if "f1_macro" in args.metrics["evaluation"]:
+        df["f1_macro"] = f1_score(y_real, y_pred, average="macro")
+
+    if "precision_weighted" in args.metrics["evaluation"]:
+        df["recision_weighted"] = precision_score(y_real, y_pred, average="weighted")
+    if "recall_weighted" in args.metrics["evaluation"]:
+        df["recall_weighted"] = recall_score(y_real, y_pred, average="weighted")
+    if "f1_weighted" in args.metrics["evaluation"]:
+        df["f1_weighted"] = f1_score(y_real, y_pred, average="weighted")
+
+    archivo_csv = "output/informeDelTest.csv" 
+    # Verificar si el archivo ya existe
+    if os.path.exists(archivo_csv):
+        # Si existe, cargarlo y agregar la nueva fila
+        df_existente = pd.read_csv(archivo_csv)
+        
+        # Concatenar los datos (agregar nueva fila)
+        df_final = pd.concat([df_existente, df], ignore_index=True)
+    else:
+        # Si no existe, crear un nuevo DataFrame
+        df_final = df
+
+    df_final[df_final.select_dtypes(include=['float64', 'int64']).columns] = df_final.select_dtypes(include=['float64', 'int64']).round(3)
+    # Guardar el DataFrame en el archivo CSV
+    df_final.to_csv(archivo_csv, index=False)
 
   #-----------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -905,17 +971,16 @@ if __name__ == "__main__":
 
         # Predecimos
         print("\n- Prediciendo...")
-        try:
-            predict()
-            print(Fore.GREEN+"Predicción realizada con éxito"+Fore.RESET)
-            # Guardamos el dataframe con la prediccion
-            data.to_csv(f'output/{args.file.split("/")[-1].split(".csv")[0]}-prediction.csv', index=False)
+       
+        predict()
+        print(Fore.GREEN+"Predicción realizada con éxito"+Fore.RESET)
+        # Guardamos el dataframe con la prediccion
+        data.to_csv(f'output/{args.file.split("/")[-1].split(".csv")[0]}-prediction.csv', index=False)
 
-            print(Fore.GREEN+"Predicción guardada con éxito"+Fore.RESET)
-            sys.exit(0)
-        except Exception as e:
-            print(e)
-            sys.exit(1)
+        generarInforme(data[args.preprocessing["target"]], data["prediccion"])
+        print(Fore.GREEN+"Predicción guardada con éxito"+Fore.RESET)
+        sys.exit(0)
+      
     else:
         print(Fore.RED+"Modo no soportado"+Fore.RESET)
         sys.exit(1)

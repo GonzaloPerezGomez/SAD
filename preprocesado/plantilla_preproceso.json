@@ -1,27 +1,27 @@
 {
     "preprocessing":{
         "target": "",
-        "targ_categorial": "",
+        "targ_categorial": "True/False",
         "unique_category_threshold": "",
-        "missing_values": "",
-        "impute_strategy": "",
-        "scaling": "",
-        "outliers": "",
-        "round_strategy": "",
-        "text_process": "",
-        "sampling": "",
-        "drop_features": [""],
+        "missing_values": ["impute", "drop"],
+        "impute_strategy": ["mean", "mode", "median"],
+        "scaling": ["min-max", "avgstd", "entreMax"],
+        "outliers": ["round", "drop"],
+        "round_strategy": ["quantile", "std"],
+        "text_process": ["BOW", "one_hot", "tf-idf"],
+        "sampling": ["undersampling", "oversampling", "none"],
+        "drop_features": [],
         "porcentaje": ""
     },
 
+
     "metric":{
-        "evaluation": [],
+        "evaluation": ["accuracy", "precision", "recall",  "f1", "specifitivity", "precision_micro", "recall_micro",  "f1_micro", "precision_macro", "recall_macro", "f1_macro", "f1_weighted", "precision_weighted", "recall_weighted"],
         "best_model":"",
         "num_modelos": ""
     },
 
     "train":{
-        "output_model": "",
         "train_size": "Valor sobre toda la muestra 'Por ejemplo 0,7'",
         "test_size": "Valor sobre el resultado de la anterior división 'De normal 0.5'"
     },
@@ -50,30 +50,6 @@
         "n_estimators_min": "",
         "n_estimators_max": "",
         "max_features": ["", "none"]
-    },
-
-
-
-
-    "opciones":{
-        "target": "",
-        "targ_categorial": "True/False",
-        "missing_values": ["impute", "drop"],
-        "impute_strategy": ["mean", "mode", "median"],
-        "scaling": ["min-max", "avgstd", "entreMax"],
-        "outliers": ["round", "drop"],
-        "round_strategy": ["quantile", "std"],
-        "text_process": ["BOW", "one_hot", "tf-idf"],
-        "sampling": ["undersampling", "oversampling", "smote", "none"],
-        "drop_features": [],
-
-
-        "evalucation": ["f1","accuracy", "precision", "recall", "specifity", 
-                        "f1_micro","precision_micro","recall_micro",
-                        "f1_macro","precision_macro","recall_macro",
-                        "balanced_accuracy", "f1_weighted", "precision_weighted", "recall_weighted", 
-                        "roc_auc", "log_loss"],
-                        
-        "best_model":["f1","accuracy", "precision", "recall", "specifity"]
     }
 }
+
