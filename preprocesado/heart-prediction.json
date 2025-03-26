@@ -1,0 +1,48 @@
+{
+    "preprocessing":{
+        "target": "HeartDisease",
+        "targ_categorial": "True",
+        "unique_category_threshold": "20",
+        "missing_values": "impute",
+        "impute_strategy": "mean",
+        "scaling": "avgstd",
+        "outliers": "round",
+        "round_strategy": "quantile",
+        "text_process": "tf-idf",
+        "sampling": "undersampling",
+        "drop_features": [],
+        "porcentaje": 0.5
+    },
+
+    "metrics":{
+        "evaluation": ["f1_micro","accuracy","precision_micro","recall_micro"],
+        "best_model":"f1_micro",
+        "num_modelos": "1"
+    },
+
+    "train":{
+        "output_model": "",
+        "train_size": "0.7",
+        "test_size": "0.5"
+    },
+
+    "test":{
+        "model_to_test": "Heart-Prediction-Quantum-Dataset-modelo-decision_tree-top1"
+    },
+
+    "kNN":{
+        "k": "13",
+        "K": "49",
+        "p": [1,2]
+    },
+
+    "DT":{
+        "min_depth": "2",
+        "max_depth": "5",
+        "intervalo_sample_per_leaf": [20, 50]
+    },
+
+    "RF":{
+
+    }
+}
