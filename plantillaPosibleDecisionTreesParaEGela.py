@@ -549,13 +549,15 @@ def divide_data():
 
     x_dev, x_test, y_dev, y_test = train_test_split(x_dev, y_dev, test_size=float(args.train["test_size"]), stratify=y_dev)
     
+    x_train = np.concatenate((x_train, x_dev), axis=0)
+    y_train = np.concatenate((y_train, y_dev), axis=0)
     
     x_test = pd.DataFrame(x_test, columns=x.columns)
     y_test = pd.DataFrame(y_test, columns=[args.preprocessing["target"]])
     datos_test = pd.concat([x_test, y_test], axis=1)
     datos_test.to_csv(f"output/{args.file.split('/')[-1].split('.csv')[0]}-test.csv", index = False)
 
-    return x_train, x_dev, y_train, y_dev
+    return x_train, y_train
  
  
 def save_model(gs, x_train, y_train):
@@ -601,7 +603,7 @@ def save_model(gs, x_train, y_train):
         print(Fore.RED+"Error al guardar el modelo"+Fore.RESET)
         print(e)
 
-def mostrar_resultados(gs, x_dev, y_dev):
+def mostrar_resultados(gs, x, y):
     """
     Muestra los resultados del clasificador.
 
@@ -621,9 +623,9 @@ def mostrar_resultados(gs, x_dev, y_dev):
     if args.verbose:
         print(Fore.MAGENTA+"> Mejores parametros:\n"+Fore.RESET, gs.best_params_)
         print(Fore.MAGENTA+"> Mejor puntuacion:\n"+Fore.RESET, gs.best_score_)
-        print(Fore.MAGENTA+"> F1-score micro:\n"+Fore.RESET, calculate_fscore(y_dev, gs.predict(x_dev))[0])
-        print(Fore.MAGENTA+"> F1-score macro:\n"+Fore.RESET, calculate_fscore(y_dev, gs.predict(x_dev))[1])
-        print(Fore.MAGENTA+"> Matriz de confusión:\n"+Fore.RESET, calculate_confusion_matrix(y_dev, gs.predict(x_dev)))
+        print(Fore.MAGENTA+"> F1-score micro:\n"+Fore.RESET, calculate_fscore(y, gs.predict(x))[0])
+        print(Fore.MAGENTA+"> F1-score macro:\n"+Fore.RESET, calculate_fscore(y, gs.predict(x))[1])
+        print(Fore.MAGENTA+"> Matriz de confusión:\n"+Fore.RESET, calculate_confusion_matrix(y, gs.predict(x)))
 
 
 
@@ -646,7 +648,7 @@ def kNN():
     :rtype: tuple
     """
     # Dividimos los datos en entrenamiento y dev
-    x_train, x_dev, y_train, y_dev = divide_data()
+    x_train, y_train = divide_data()
 
     hp = {
         'n_neighbors': range(int(args.kNN["k"]), int(args.kNN["K"])+1),
@@ -671,7 +673,7 @@ def kNN():
     print("Tiempo de ejecución:"+Fore.MAGENTA, execution_time,Fore.RESET+ "segundos")
     
     # Mostramos los resultados
-    mostrar_resultados(gs, x_dev, y_dev)
+    mostrar_resultados(gs, x_train, x_train)
     
     # Guardamos el modelo utilizando pickle
     save_model(gs, x_train, y_train)
@@ -686,7 +688,7 @@ def decision_tree():
     :rtype: tuple
     """
     # Dividimos los datos en entrenamiento y dev
-    x_train, x_dev, y_train, y_dev = divide_data()
+    x_train, y_train = divide_data()
     
     # Hacemos un barrido de hiperparametros
     hp = {
@@ -711,7 +713,7 @@ def decision_tree():
     print("Tiempo de ejecución:"+Fore.MAGENTA, execution_time,Fore.RESET+ "segundos")
     
     # Mostramos los resultados
-    mostrar_resultados(gs, x_dev, y_dev)
+    mostrar_resultados(gs, x_train, x_train)
     
     # Guardamos el modelo utilizando pickle
     save_model(gs, x_train,  y_train)
@@ -730,7 +732,7 @@ def random_forest():
     """
     
     # Dividimos los datos en entrenamiento y dev
-    x_train, x_dev, y_train, y_dev = divide_data()
+    x_train, y_train = divide_data()
     
     # Hacemos un barrido de hiperparametros
 
@@ -756,7 +758,7 @@ def random_forest():
     print("Tiempo de ejecución:"+Fore.MAGENTA, execution_time,Fore.RESET+ "segundos")
     
     # Mostramos los resultados
-    mostrar_resultados(gs, x_dev, y_dev)
+    mostrar_resultados(gs, x_train, x_train)
     
     # Guardamos el modelo utilizando pickle
     save_model(gs, x_train,  y_train)

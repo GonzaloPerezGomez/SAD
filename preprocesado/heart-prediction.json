@@ -1,8 +1,8 @@
 {
     "preprocessing":{
-        "target": "Especie",
+        "target": "HeartDisease",
         "targ_categorial": "True",
-        "unique_category_threshold": "10",
+        "unique_category_threshold": "20",
         "missing_values": "impute",
         "impute_strategy": "mean",
         "scaling": "avgstd",
@@ -27,7 +27,7 @@
     },
 
     "test":{
-        "model_to_test": "iris-modelo-kNN-top1"
+        "model_to_test": "Heart-Prediction-Quantum-Dataset-modelo-decision_tree-top1"
     },
 
     "kNN":{
@@ -37,16 +37,12 @@
     },
 
     "DT":{
-        "min_depth": "",
-        "max_depth": "",
-        "intervalo_sample_per_leaf": []
+        "min_depth": "2",
+        "max_depth": "5",
+        "intervalo_sample_per_leaf": [20, 50]
     },
 
     "RF":{
-
-    },
-
-    "NB":{
 
     }
 }
