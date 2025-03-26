@@ -64,7 +64,7 @@
         "outliers": ["round", "drop"],
         "round_strategy": ["quantile", "std"],
         "text_process": ["BOW", "one_hot", "tf-idf"],
-        "sampling": ["undersampling", "oversampling", "none"],
+        "sampling": ["undersampling", "oversampling", "smote", "none"],
         "drop_features": [],
 
 
